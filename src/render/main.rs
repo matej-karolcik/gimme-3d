@@ -1,6 +1,5 @@
 use std::path::Path;
 
-use nalgebra::UnitQuaternion;
 use three_d::*;
 use three_d_asset::io::Serialize;
 
@@ -55,21 +54,12 @@ async fn run(model_path: &str, context: &HeadlessContext) {
     let camera_props = camera::extract_camera(&scene).unwrap();
     let mesh_props = mesh::extract_mesh(&scene).unwrap();
 
-    let point = nalgebra::Point3::new(
-        camera_props.position.x * camera_props.scale.x,
-        camera_props.position.y * camera_props.scale.y,
-        camera_props.position.z * camera_props.scale.z,
-    );
-    let point = rotate_point(
-        point,
-        // nalgebra::Point3::from(camera_props.position),
-        camera_props.rotation,
-    );
+    let point = camera_props.rotation.transform_point(&camera_props.position);
+    let point = camera_props.scale.transform_point(&point);
 
     let camera = Camera::new_perspective(
         viewport,
         vec3(point.x, point.y, point.z),
-        // vec3(camera_props.position.x, camera_props.position.y, camera_props.position.z),
         vec3(0.0, 0.0, 0.0),
         vec3(0.0, 1.0, 0.0),
         radians(camera_props.yfov),
@@ -91,51 +81,17 @@ async fn run(model_path: &str, context: &HeadlessContext) {
 
     let mut mesh = Model::<ColorMaterial>::new(&context, &model).unwrap();
     mesh.iter_mut().for_each(|m| {
-        let point = nalgebra::Point3::new(
-            mesh_props.position.x * mesh_props.scale.x,
-            mesh_props.position.y * mesh_props.scale.y,
-            mesh_props.position.z * mesh_props.scale.z,
+        let point = mesh_props.rotation.transform_point(&mesh_props.position);
+        let point = mesh_props.scale.transform_point(&point);
+
+        m.set_transformation(
+            Mat4::from_translation(vec3(
+                point.x,
+                point.y,
+                point.z,
+            ))
         );
-        let point = rotate_point(
-            point,
-            // nalgebra::Point3::from(mesh_props.position),
-            mesh_props.rotation,
-        );
-        // m.set_transformation(Mat4::from_translation(vec3(
-        //     point.x,
-        //     point.y,
-        //     point.z,
-        // )));
-        let point = nalgebra::Point3::new(
-            mesh_props.position.x * mesh_props.scale.x,
-            mesh_props.position.y * mesh_props.scale.y,
-            mesh_props.position.z * mesh_props.scale.z,
-        );
-        let point = rotate_point(
-            point,
-            // nalgebra::Point3::from(camera_props.position),
-            mesh_props.rotation,
-        );
-        m.set_transformation(Mat4::from_translation(vec3(
-            point.x,
-            point.y,
-            point.z,
-        )));
-        // m.set_transformation(
-        //     Mat4::from_nonuniform_scale(
-        //         mesh_props.scale.x,
-        //         mesh_props.scale.y,
-        //         mesh_props.scale.z,
-        //     )
-        //         .concat(&Mat4::from_angle_z(Rad(mesh_props.rotation.coords.z)))
-        //         .concat(&Mat4::from_angle_y(Rad(mesh_props.rotation.coords.y)))
-        //         .concat(&Mat4::from_angle_x(Rad(mesh_props.rotation.coords.x)))
-        //         .concat(&Mat4::from_translation(vec3(
-        //             mesh_props.position.x,
-        //             mesh_props.position.y,
-        //             mesh_props.position.z,
-        //         )))
-        // );
+
         m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_texture));
         m.material.is_transparent = false;
         m.material.render_states.cull = Cull::Back;
@@ -190,11 +146,4 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         .unwrap();
 
     println!("Time: {:?}", std::time::Instant::now() - start);
-}
-
-fn rotate_point(point: nalgebra::Point3<f32>, rotation: nalgebra::Quaternion<f32>) -> nalgebra::Point3<f32> {
-    let rotation = nalgebra::Rotation3::from(
-        UnitQuaternion::from_quaternion(rotation),
-    );
-    rotation.transform_point(&point)
 }

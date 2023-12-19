@@ -1,7 +1,7 @@
 use gltf::{Node, Scene};
 use gltf::camera::Projection;
 use gltf::scene::iter;
-use nalgebra::{Quaternion, Vector3};
+use nalgebra::{Point3, Quaternion, Scale3, UnitQuaternion};
 
 use crate::object;
 
@@ -26,9 +26,22 @@ fn get_camera(node: &Node) -> Option<object::Camera> {
         match camera.projection() {
             Projection::Perspective(perspective) => {
                 return Some(object::Camera {
-                    position: Vector3::new(position[0], position[1], position[2]),
-                    rotation: Quaternion::new(rotation[3], rotation[0], rotation[1], rotation[2]),
-                    scale: Vector3::new(scale[0], scale[1], scale[2]),
+                    position: Point3::new(
+                        position[0],
+                        position[1],
+                        position[2],
+                    ),
+                    rotation: UnitQuaternion::from_quaternion(Quaternion::new(
+                        rotation[3],
+                        rotation[0],
+                        rotation[1],
+                        rotation[2],
+                    )),
+                    scale: Scale3::new(
+                        scale[0],
+                        scale[1],
+                        scale[2],
+                    ),
                     aspect_ratio: perspective.aspect_ratio().unwrap_or(1.0),
                     yfov: perspective.yfov(),
                     zfar: perspective.zfar().unwrap_or(100.0),
