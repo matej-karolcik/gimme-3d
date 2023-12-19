@@ -1,0 +1,31 @@
+[package]
+name = "gimme-the-3d"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "fbx2gltf"
+path = "src/fbx2gltf/main.rs"
+
+[[bin]]
+name = "parse"
+path = "src/parse/main.rs"
+
+[[bin]]
+name = "render"
+path = "src/render/main.rs"
+
+
+[dependencies]
+glam = "0.25.0"
+gltf = "1.4.0"
+anyhow = { version = "1.0.75", features = [] }
+clap = "4.4.11"
+tokio = { version = "1.35.0", features = ["rt", "rt-multi-thread", "macros"] }
+three-d = { version = "0.16.3", features = ["headless"] }
+three-d-asset = { version = "0.6.0", features = ["gltf", "png", "data-url"] }
+rayon = "1.8.0"
+futures = "0.3.29"
+nalgebra = "0.32.3"
