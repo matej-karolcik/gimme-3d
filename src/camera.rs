@@ -1,17 +1,18 @@
 use gltf::{Node, Scene};
 use gltf::camera::Projection;
 use gltf::scene::iter;
-use nalgebra::{Point3, Quaternion, Scale3, UnitQuaternion};
 
 use crate::object;
+use crate::object::Transform;
 
 pub fn extract_camera(scene: &Scene) -> Option<object::Camera> {
     for node in scene.nodes() {
-        let maybe_camera = get_camera(&node);
+        let carry = object::Transform::from(node.transform());
+        let maybe_camera = get_camera(&node, carry);
         if maybe_camera.is_some() {
             return maybe_camera;
         }
-        let maybe_camera = visit_nodes(node.children());
+        let maybe_camera = visit_nodes(node.children(), carry);
         if maybe_camera.is_some() {
             return maybe_camera;
         }
@@ -20,28 +21,12 @@ pub fn extract_camera(scene: &Scene) -> Option<object::Camera> {
     None
 }
 
-fn get_camera(node: &Node) -> Option<object::Camera> {
+fn get_camera(node: &Node, carry: Transform) -> Option<object::Camera> {
     if let Some(camera) = node.camera() {
-        let (position, rotation, scale) = node.transform().decomposed();
         match camera.projection() {
             Projection::Perspective(perspective) => {
                 return Some(object::Camera {
-                    position: Point3::new(
-                        position[0],
-                        position[1],
-                        position[2],
-                    ),
-                    rotation: UnitQuaternion::from_quaternion(Quaternion::new(
-                        rotation[3],
-                        rotation[0],
-                        rotation[1],
-                        rotation[2],
-                    )),
-                    scale: Scale3::new(
-                        scale[0],
-                        scale[1],
-                        scale[2],
-                    ),
+                    transform: carry * object::Transform::from(node.transform()),
                     aspect_ratio: perspective.aspect_ratio().unwrap_or(1.0),
                     yfov: perspective.yfov(),
                     zfar: perspective.zfar().unwrap_or(100.0),
@@ -54,12 +39,13 @@ fn get_camera(node: &Node) -> Option<object::Camera> {
     None
 }
 
-fn visit_nodes(nodes: iter::Children) -> Option<object::Camera> {
+fn visit_nodes(nodes: iter::Children, carry: Transform) -> Option<object::Camera> {
     for node in nodes {
-        if let Some(camera) = get_camera(&node) {
+        let carry = carry * object::Transform::from(node.transform());
+        if let Some(camera) = get_camera(&node, carry) {
             return Some(camera);
         }
-        let maybe_camera = visit_nodes(node.children());
+        let maybe_camera = visit_nodes(node.children(), carry);
         if maybe_camera.is_some() {
             return maybe_camera;
         }
