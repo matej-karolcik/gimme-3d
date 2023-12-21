@@ -23,7 +23,7 @@ pub fn extract_mesh(scene: &Scene) -> Option<object::Mesh> {
 fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
     if let Some(_) = node.mesh() {
         return Some(object::Mesh {
-            transform: carry * object::Transform::from(node.transform()),
+            transform: object::Transform::from(node.transform()),
         });
     }
     None

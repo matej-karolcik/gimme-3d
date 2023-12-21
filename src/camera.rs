@@ -26,7 +26,8 @@ fn get_camera(node: &Node, carry: Transform) -> Option<object::Camera> {
         match camera.projection() {
             Projection::Perspective(perspective) => {
                 return Some(object::Camera {
-                    transform: carry * object::Transform::from(node.transform()),
+                    parent_transform: carry,
+                    transform: object::Transform::from(node.transform()),
                     aspect_ratio: perspective.aspect_ratio().unwrap_or(1.0),
                     yfov: perspective.yfov(),
                     zfar: perspective.zfar().unwrap_or(100.0),
