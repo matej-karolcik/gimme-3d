@@ -23,6 +23,7 @@ pub fn extract_mesh(scene: &Scene) -> Option<object::Mesh> {
 fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
     if let Some(_) = node.mesh() {
         return Some(object::Mesh {
+            parent_transform: carry,
             transform: object::Transform::from(node.transform()),
         });
     }
@@ -31,10 +32,10 @@ fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
 
 fn visit_nodes(nodes: iter::Children, carry: Transform) -> Option<object::Mesh> {
     for node in nodes {
-        let carry = carry * object::Transform::from(node.transform());
         if let Some(mesh) = get_mesh(&node, carry) {
             return Some(mesh);
         }
+        let carry = carry * object::Transform::from(node.transform());
         let maybe_mesh = visit_nodes(node.children(), carry);
         if maybe_mesh.is_some() {
             return maybe_mesh;

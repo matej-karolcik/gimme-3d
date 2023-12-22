@@ -42,10 +42,10 @@ fn get_camera(node: &Node, carry: Transform) -> Option<object::Camera> {
 
 fn visit_nodes(nodes: iter::Children, carry: Transform) -> Option<object::Camera> {
     for node in nodes {
-        let carry = carry * object::Transform::from(node.transform());
         if let Some(camera) = get_camera(&node, carry) {
             return Some(camera);
         }
+        let carry = carry * object::Transform::from(node.transform());
         let maybe_camera = visit_nodes(node.children(), carry);
         if maybe_camera.is_some() {
             return maybe_camera;

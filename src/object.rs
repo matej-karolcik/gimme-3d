@@ -16,6 +16,7 @@ pub struct Camera {
 
 #[derive(Debug)]
 pub struct Mesh {
+    pub parent_transform: Transform,
     pub transform: Transform,
 }
 
@@ -24,7 +25,20 @@ pub struct Transform {
     pub matrix: Matrix4<f32>,
 }
 
+fn float_compare(a: f32, b: f32) -> bool {
+    (a - b).abs() < 0.0001
+}
+
 impl Transform {
+    pub fn has_equal_rotation(&self, other: &Self) -> bool {
+        let (_, r1, _) = self.decomposed();
+        let (_, r2, _) = other.decomposed();
+        float_compare(r1[0], r2[0])
+            && float_compare(r1[1], r2[1])
+            && float_compare(r1[2], r2[2])
+            && float_compare(r1[3], r2[3])
+    }
+
     pub fn from_quaternion(quaternion: nalgebra::Quaternion<f32>) -> Self {
         let t = gltf::scene::Transform::Decomposed {
             translation: [0.0, 0.0, 0.0],

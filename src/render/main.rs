@@ -13,11 +13,11 @@ async fn main() {
     // run("output/NotebookA5_out/NotebookA5.gltf", &context).await;
     // run("output/PhoneCase_IPhone12_out/PhoneCase_IPhone12.gltf", &context).await;
     // run("output/3_p1_shower-curtain_1800x2000_out/3_p1_shower-curtain_1800x2000.gltf", &context).await;
-    // run("output/hoodie_out/hoodie.gltf", &context).await;
+    // run("output/1_p1_hoodie_out/1_p1_hoodie.gltf", &context).await;
     // run("output/2_p1_sweater_out/2_p1_sweater.gltf", &context).await;
-    run("output/1_p1_t-shirt_out/1_p1_t-shirt.gltf", &context).await;
+    // run("output/1_p1_t-shirt_out/1_p1_t-shirt.gltf", &context).await;
     // run("output/0_p3_bath-towel_out/0_p3_bath-towel.gltf", &context).await;
-    return;
+    // return;
 
     let _ = std::fs::create_dir("results");
     let dirs = std::fs::read_dir("output").unwrap();
@@ -67,51 +67,22 @@ async fn run(model_path: &str, context: &HeadlessContext) {
 
     let model = loaded.deserialize(model_path).unwrap();
 
-    let mut global_transform: Option<gimme_the_3d::object::Transform> = None;
-    let mut mesh_rot: Option<[f32; 4]> = None;
-
     let mut mesh = Model::<ColorMaterial>::new(&context, &model).unwrap();
     mesh.iter_mut().for_each(|m| {
         let _global_transform = m.transformation();
-        let glob_transform = gimme_the_3d::object::Transform::from(_global_transform);
+        let mut glob_transform = gimme_the_3d::object::Transform::from(_global_transform);
 
-        // todo deduplicate rotation
         println!("global {:?}", glob_transform.decomposed());
-        println!("local {:?}", mesh_props.transform.decomposed());
-        let final_mesh_transform = (glob_transform * mesh_props.transform).decomposed();
-        println!("global*local {:?}", final_mesh_transform);
-        println!("camera {:?}", camera_props.transform.decomposed());
+        println!("parent {:?}", mesh_props.parent_transform.decomposed());
+        println!("mesh {:?}", mesh_props.transform.decomposed());
 
-        let (_, rotation, _) = mesh_props.transform.decomposed();
-        // if glob_transform != mesh_props.transform {
-        //     mesh_rot = Some(rotation);
-        // }
-        let (translation, rotation, scale) = glob_transform.decomposed();
-        let mut matrix_rotation = nalgebra::Quaternion::new(
-            rotation[3],
-            rotation[0],
-            rotation[1],
-            rotation[2],
-        );
+        print_euler("global", &glob_transform);
+        print_euler("parent", &mesh_props.parent_transform);
+        print_euler("mesh", &mesh_props.transform);
 
-        let new_global = gimme_the_3d::object::Transform::from(
-            gltf::scene::Transform::Decomposed {
-                translation,
-                scale,
-                rotation: [
-                    matrix_rotation.coords.x,
-                    matrix_rotation.coords.y,
-                    matrix_rotation.coords.z,
-                    matrix_rotation.coords.w
-                ],
-            }
-        );
+        let final_transform = mesh_props.parent_transform * mesh_props.transform;
 
-        global_transform = Some(glob_transform);
-
-        let foobar: Mat4 = glob_transform.into();
-
-        m.set_transformation(foobar.concat(&mesh_props.transform.into()));
+        m.set_transformation(final_transform.into());
 
         m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_texture));
         m.material.is_transparent = false;
@@ -120,26 +91,28 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;
     });
 
-    let mut glob_transform = global_transform.unwrap();
-    if mesh_rot.is_some() {
-        let mesh_rot = mesh_rot.unwrap();
-        let mesh_transform = gimme_the_3d::object::Transform::from_quaternion(
-            nalgebra::Quaternion::new(
-                mesh_rot[3],
-                mesh_rot[0],
-                mesh_rot[1],
-                mesh_rot[2],
-            )
-        );
-        // glob_transform = glob_transform * mesh_transform;
+    // let mut glob_transform = global_transform.unwrap();
+    if camera_props.transform.has_equal_rotation(&gimme_the_3d::object::Transform::from_quaternion(nalgebra::Quaternion::identity())) {
+        // let (translation, _, scale) = glob_transform.decomposed();
+        // glob_transform =
     }
-
-    let camera_transform = glob_transform * camera_props.transform;
+    let camera_transform = camera_props.parent_transform * camera_props.transform;
     let origin = nalgebra::Point3::origin();
     let point = camera_transform.matrix.transform_point(&origin);
-    let at = glob_transform.matrix.transform_point(&origin);
+    // let at = glob_transform.matrix.transform_point(&origin);
+    let at = camera_props.parent_transform.matrix.transform_point(&origin);
+    println!("camera parent {:?}", camera_props.parent_transform.decomposed());
+    println!("camera {:?}", camera_props.transform.decomposed());
+    print_euler("camera parent", &camera_props.parent_transform);
+    print_euler("camera before", &camera_props.transform);
+    print_euler("camera after", &camera_transform);
 
-    let camera = Camera::new_perspective(
+    let width = 500;
+    let height = width * camera_props.aspect_ratio as u32;
+    let viewport = Viewport::new_at_origo(width, height);
+
+
+    let mut camera = Camera::new_perspective(
         viewport,
         vec3(point.x, point.y, point.z),
         vec3(at.x, at.y, at.z),
@@ -149,7 +122,13 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         camera_props.zfar,
     );
 
-    // Create a color texture to render into
+    // todo this should be done properly
+    // println!("camera {:?}", camera_props.parent_transform.decomposed().1[0].abs());
+    if (camera_props.parent_transform.decomposed().1[0].abs() - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.0001
+        && camera_props.transform.has_equal_rotation(&gimme_the_3d::object::Transform::from_quaternion(nalgebra::Quaternion::identity())) {
+        camera.roll(three_d_asset::Deg::<f32>(90.0));
+    }
+
     let mut texture = Texture2D::new_empty::<[u8; 4]>(
         &context,
         viewport.width,
@@ -161,7 +140,6 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         Wrapping::ClampToEdge,
     );
 
-    // Also create a depth texture to support depth testing
     let mut depth_texture = DepthTexture2D::new::<f32>(
         &context,
         viewport.width,
@@ -170,16 +148,11 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         Wrapping::ClampToEdge,
     );
 
-    // Create a render target (a combination of a color and a depth texture) to write into
     let pixels = RenderTarget::new(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
-        // Clear color and depth of the render target
-        // .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 1.0, 1.0))
-        // Render the triangle with the per vertex colors defined at construction
         .render(&camera, &mesh, &[])
-        // Read out the colors from the render target
         .read_color();
 
     let result_path = Path::new("results")
@@ -199,4 +172,21 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         .unwrap();
 
     println!("Time: {:?}", std::time::Instant::now() - start);
+}
+
+fn print_euler(label: &str, transform: &gimme_the_3d::object::Transform) {
+    let (_, rot, _) = transform.decomposed();
+    let rot = nalgebra::Rotation3::from(
+        nalgebra::UnitQuaternion::from_quaternion(
+            nalgebra::Quaternion::new(
+                rot[3],
+                rot[0],
+                rot[1],
+                rot[2],
+            )
+        )
+    );
+
+    let (x, y, z) = rot.euler_angles();
+    println!("{} {:?}", label, [x.to_degrees(), y.to_degrees(), z.to_degrees()]);
 }
