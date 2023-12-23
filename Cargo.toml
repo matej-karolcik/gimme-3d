@@ -17,6 +17,10 @@ path = "src/parse/main.rs"
 name = "render"
 path = "src/render/main.rs"
 
+[[bin]]
+name = "render2"
+path = "src/render2/main.rs"
+
 
 [dependencies]
 glam = "0.25.0"

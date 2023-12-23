@@ -3,9 +3,6 @@ use std::path::Path;
 use three_d::*;
 use three_d_asset::io::Serialize;
 
-use gimme_the_3d::camera;
-use gimme_the_3d::mesh;
-
 #[tokio::main]
 async fn main() {
     let context = HeadlessContext::new().unwrap();
@@ -16,8 +13,8 @@ async fn main() {
     // run("output/1_p1_hoodie_out/1_p1_hoodie.gltf", &context).await;
     // run("output/2_p1_sweater_out/2_p1_sweater.gltf", &context).await;
     // run("output/1_p1_t-shirt_out/1_p1_t-shirt.gltf", &context).await;
-    run("output/0_p3_bath-towel_out/0_p3_bath-towel.gltf", &context).await;
-    return;
+    // run("output/0_p3_bath-towel_out/0_p3_bath-towel.gltf", &context).await;
+    // return;
 
     let _ = std::fs::create_dir("results");
     let dirs = std::fs::read_dir("output").unwrap();
@@ -54,8 +51,8 @@ async fn run(model_path: &str, context: &HeadlessContext) {
 
     let scene = default_scene_maybe.unwrap();
 
-    let camera_props = camera::extract_camera(&scene).unwrap();
-    let mesh_props = mesh::extract_mesh(&scene).unwrap();
+    let camera_props = gimme_the_3d::gltf::extract(&scene, gimme_the_3d::gltf::get_camera).unwrap();
+    let mesh_props = gimme_the_3d::gltf::extract(&scene, gimme_the_3d::gltf::get_mesh).unwrap();
 
     let mut loaded = three_d_asset::io::load_async(&[
         "test2.png",

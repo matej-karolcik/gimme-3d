@@ -1,8 +1,5 @@
 use anyhow::anyhow;
 
-use gimme_the_3d::camera;
-use gimme_the_3d::mesh;
-
 fn main() {
     let gltf_dir = std::env::args().nth(1).expect("No gltf path given");
 
@@ -72,11 +69,11 @@ fn check_one(gltf_path: &str) -> anyhow::Result<()> {
 
     let scene = default_scene_maybe.unwrap();
 
-    let camera = camera::extract_camera(&scene);
+    let camera = gimme_the_3d::gltf::extract(&scene, gimme_the_3d::gltf::get_camera);
     if camera.is_none() {
         println!("No camera found");
     }
-    let mesh = mesh::extract_mesh(&scene);
+    let mesh = gimme_the_3d::gltf::extract(&scene, gimme_the_3d::gltf::get_mesh);
     if mesh.is_none() {
         println!("No mesh found");
     }

@@ -1,3 +1,3 @@
 pub mod object;
-pub mod camera;
-pub mod mesh;
+pub mod gltf;
+pub mod render;
