@@ -16,8 +16,8 @@ async fn main() {
     // run("output/1_p1_hoodie_out/1_p1_hoodie.gltf", &context).await;
     // run("output/2_p1_sweater_out/2_p1_sweater.gltf", &context).await;
     // run("output/1_p1_t-shirt_out/1_p1_t-shirt.gltf", &context).await;
-    // run("output/0_p3_bath-towel_out/0_p3_bath-towel.gltf", &context).await;
-    // return;
+    run("output/0_p3_bath-towel_out/0_p3_bath-towel.gltf", &context).await;
+    return;
 
     let _ = std::fs::create_dir("results");
     let dirs = std::fs::read_dir("output").unwrap();
@@ -69,43 +69,37 @@ async fn run(model_path: &str, context: &HeadlessContext) {
 
     let mut mesh = Model::<ColorMaterial>::new(&context, &model).unwrap();
     mesh.iter_mut().for_each(|m| {
-        let _global_transform = m.transformation();
-        let mut glob_transform = gimme_the_3d::object::Transform::from(_global_transform);
+        // let _global_transform = m.transformation();
+        // let mut glob_transform = gimme_the_3d::object::Transform::from(_global_transform);
 
-        println!("global {:?}", glob_transform.decomposed());
-        println!("parent {:?}", mesh_props.parent_transform.decomposed());
-        println!("mesh {:?}", mesh_props.transform.decomposed());
+        // println!("global {:?}", glob_transform.decomposed());
+        // println!("parent {:?}", mesh_props.parent_transform.decomposed());
+        // println!("mesh {:?}", mesh_props.transform.decomposed());
 
-        print_euler("global", &glob_transform);
-        print_euler("parent", &mesh_props.parent_transform);
-        print_euler("mesh", &mesh_props.transform);
+        // print_euler("global", &glob_transform);
+        // print_euler("parent", &mesh_props.parent_transform);
+        // print_euler("mesh", &mesh_props.transform);
 
         let final_transform = mesh_props.parent_transform * mesh_props.transform;
 
         m.set_transformation(final_transform.into());
 
         m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_texture));
-        m.material.is_transparent = false;
-        m.material.render_states.cull = Cull::Back;
+        m.material.is_transparent = true;
+        // m.material.render_states.cull = Cull::Back;
         m.material.render_states.cull = Cull::None;
         m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;
     });
 
-    // let mut glob_transform = global_transform.unwrap();
-    if camera_props.transform.has_equal_rotation(&gimme_the_3d::object::Transform::from_quaternion(nalgebra::Quaternion::identity())) {
-        // let (translation, _, scale) = glob_transform.decomposed();
-        // glob_transform =
-    }
     let camera_transform = camera_props.parent_transform * camera_props.transform;
     let origin = nalgebra::Point3::origin();
     let point = camera_transform.matrix.transform_point(&origin);
-    // let at = glob_transform.matrix.transform_point(&origin);
     let at = camera_props.parent_transform.matrix.transform_point(&origin);
-    println!("camera parent {:?}", camera_props.parent_transform.decomposed());
-    println!("camera {:?}", camera_props.transform.decomposed());
-    print_euler("camera parent", &camera_props.parent_transform);
-    print_euler("camera before", &camera_props.transform);
-    print_euler("camera after", &camera_transform);
+    // println!("camera parent {:?}", camera_props.parent_transform.decomposed());
+    // println!("camera {:?}", camera_props.transform.decomposed());
+    // print_euler("camera parent", &camera_props.parent_transform);
+    // print_euler("camera before", &camera_props.transform);
+    // print_euler("camera after", &camera_transform);
 
     let width = 500;
     let height = width * camera_props.aspect_ratio as u32;
@@ -152,12 +146,24 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
+        .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0))
         .render(&camera, &mesh, &[])
         .read_color();
 
     let result_path = Path::new("results")
         .join(Path::new(&model_path).file_name().unwrap())
         .with_extension("png");
+
+
+    // raw bytes here
+    // let foobar = CpuTexture {
+    //     data: TextureData::RgbaU8(pixels.clone()),
+    //     width: texture.width(),
+    //     height: texture.height(),
+    //     ..Default::default()
+    // }.serialize("foobar.png").unwrap().remove("foobar.png").unwrap();
+    //
+    // std::fs::write("foobar.png", foobar).unwrap();
 
     three_d_asset::io::save(
         &CpuTexture {

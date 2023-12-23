@@ -8,10 +8,12 @@ use crate::object::Transform;
 pub fn extract_camera(scene: &Scene) -> Option<object::Camera> {
     for node in scene.nodes() {
         let carry = object::Transform::from(node.transform());
+
         let maybe_camera = get_camera(&node, carry);
         if maybe_camera.is_some() {
             return maybe_camera;
         }
+
         let maybe_camera = visit_nodes(node.children(), carry);
         if maybe_camera.is_some() {
             return maybe_camera;
@@ -45,7 +47,9 @@ fn visit_nodes(nodes: iter::Children, carry: Transform) -> Option<object::Camera
         if let Some(camera) = get_camera(&node, carry) {
             return Some(camera);
         }
+
         let carry = carry * object::Transform::from(node.transform());
+
         let maybe_camera = visit_nodes(node.children(), carry);
         if maybe_camera.is_some() {
             return maybe_camera;

@@ -7,10 +7,12 @@ use crate::object::Transform;
 pub fn extract_mesh(scene: &Scene) -> Option<object::Mesh> {
     for node in scene.nodes() {
         let transform = object::Transform::from(node.transform());
+
         let maybe_mesh = get_mesh(&node, transform);
         if maybe_mesh.is_some() {
             return maybe_mesh;
         }
+
         let maybe_mesh = visit_nodes(node.children(), transform);
         if maybe_mesh.is_some() {
             return maybe_mesh;
@@ -35,7 +37,9 @@ fn visit_nodes(nodes: iter::Children, carry: Transform) -> Option<object::Mesh> 
         if let Some(mesh) = get_mesh(&node, carry) {
             return Some(mesh);
         }
+
         let carry = carry * object::Transform::from(node.transform());
+
         let maybe_mesh = visit_nodes(node.children(), carry);
         if maybe_mesh.is_some() {
             return maybe_mesh;
