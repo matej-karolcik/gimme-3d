@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libfontconfig1-dev \
     xvfb \
     libxcursor-dev \
+    libssl-dev \
     libxi-dev \
     && rm -rf /var/lib/apt/lists/*
 
@@ -16,7 +17,9 @@ WORKDIR /usr/src/renderer
 COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
-RUN cargo build --release --bin render
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/home/root/app/target \
+    cargo build --release --bin server
 
 FROM debian:trixie-20231218-slim
 
@@ -24,10 +27,11 @@ RUN apt-get update && apt-get install -y \
     libfontconfig1-dev \
     xvfb \
     libxcursor-dev \
+    libssl-dev \
+    ca-certificates \
     libxi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/renderer/target/release/render /app/render
+COPY --from=builder /usr/src/renderer/target/release/server /app/server
 
-COPY ./output /app/output
-COPY test2.png /app/test2.png
+ENTRYPOINT ["xvfb-run", "-a", "/app/server"]

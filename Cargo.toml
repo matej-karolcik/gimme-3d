@@ -21,6 +21,18 @@ path = "src/render/main.rs"
 name = "render2"
 path = "src/render2/main.rs"
 
+[[bin]]
+name = "server"
+path = "src/server/main.rs"
+
+[[bin]]
+name = "experiment"
+path = "src/experiment/main.rs"
+
+[[bin]]
+name = "convert"
+path = "src/convert/main.rs"
+
 
 [dependencies]
 glam = "0.25.0"
@@ -28,6 +40,14 @@ gltf = "1.4.0"
 anyhow = "1.0.75"
 clap = "4.4.11"
 tokio = { version = "1.35.0", features = ["rt", "rt-multi-thread", "macros"] }
+# todo we just need headless?
 three-d = { version = "0.16.3", features = ["headless", "window", "winit", "raw-window-handle"] }
-three-d-asset = { version = "0.6.0", features = ["gltf", "png", "data-url"] }
+three-d-asset = { version = "0.6.0", features = ["gltf", "png", "jpeg", "data-url", "reqwest"] }
 nalgebra = "0.32.3"
+warp = "0.3.6"
+serde = { version = "1.0.193", features = ["derive"] }
+log = "0.4.20"
+serde_json = "1.0.108"
+env_logger = "0.10.1"
+tokio-stream = "0.1.14"
+image = { version = "0.24.7", features = ["webp-encoder"] }
