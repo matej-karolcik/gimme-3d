@@ -51,8 +51,8 @@ async fn run(model_path: &str, context: &HeadlessContext) {
 
     let scene = default_scene_maybe.unwrap();
 
-    let camera_props = gimme_the_3d::gltf::extract(&scene, gimme_the_3d::gltf::get_camera).unwrap();
-    let mesh_props = gimme_the_3d::gltf::extract(&scene, gimme_the_3d::gltf::get_mesh).unwrap();
+    let camera_props = rs3d::gltf::extract(&scene, rs3d::gltf::get_camera).unwrap();
+    let mesh_props = rs3d::gltf::extract(&scene, rs3d::gltf::get_mesh).unwrap();
 
     let mut loaded = three_d_asset::io::load_async(&[
         "test2.png",
@@ -67,7 +67,7 @@ async fn run(model_path: &str, context: &HeadlessContext) {
     let mut mesh = Model::<ColorMaterial>::new(&context, &model).unwrap();
     mesh.iter_mut().for_each(|m| {
         // let _global_transform = m.transformation();
-        // let mut glob_transform = gimme_the_3d::object::Transform::from(_global_transform);
+        // let mut glob_transform = rs3d::object::Transform::from(_global_transform);
 
         // println!("global {:?}", glob_transform.decomposed());
         // println!("parent {:?}", mesh_props.parent_transform.decomposed());
@@ -116,7 +116,7 @@ async fn run(model_path: &str, context: &HeadlessContext) {
     // todo this should be done properly
     // println!("camera {:?}", camera_props.parent_transform.decomposed().1[0].abs());
     if (camera_props.parent_transform.decomposed().1[0].abs() - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.0001
-        && camera_props.transform.has_equal_rotation(&gimme_the_3d::object::Transform::from_quaternion(nalgebra::Quaternion::identity())) {
+        && camera_props.transform.has_equal_rotation(&rs3d::object::Transform::from_quaternion(nalgebra::Quaternion::identity())) {
         camera.roll(three_d_asset::Deg::<f32>(90.0));
     }
 
@@ -177,7 +177,7 @@ async fn run(model_path: &str, context: &HeadlessContext) {
     println!("Time: {:?}", std::time::Instant::now() - start);
 }
 
-fn print_euler(label: &str, transform: &gimme_the_3d::object::Transform) {
+fn print_euler(label: &str, transform: &rs3d::object::Transform) {
     let (_, rot, _) = transform.decomposed();
     let rot = nalgebra::Rotation3::from(
         nalgebra::UnitQuaternion::from_quaternion(

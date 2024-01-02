@@ -15,7 +15,7 @@ async fn main() {
 
     let context = HeadlessContext::new().unwrap();
     let message = rx.await.unwrap();
-    let pixels = gimme_the_3d::render::render(
+    let pixels = rs3d::render::render(
         message.model_path.as_str(),
         message.texture_path.as_str(),
         &context,

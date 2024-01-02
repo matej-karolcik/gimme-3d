@@ -6,7 +6,7 @@ use tokio::sync::mpsc;
 use warp::Filter;
 use warp::reply::Response;
 
-use gimme_the_3d::render::RawPixels;
+use rs3d::render::RawPixels;
 
 #[derive(Deserialize, Serialize)]
 struct Request {
@@ -31,7 +31,7 @@ async fn main() {
 
     loop {
         let (request, response_tx) = request_rx.recv().await.unwrap();
-        let pixels = gimme_the_3d::render::render(
+        let pixels = rs3d::render::render(
             request.model_path.as_str(),
             request.texture_path.as_str(),
             &context,
