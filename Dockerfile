@@ -18,7 +18,6 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/home/root/app/target \
     cargo build --release --bin server
 
 FROM debian:trixie-20231218-slim

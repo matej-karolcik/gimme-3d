@@ -5,29 +5,7 @@ use gltf::scene::iter;
 use crate::object;
 use crate::object::Transform;
 
-pub fn extract_camera(scene: &Scene) -> Option<object::Camera> {
-    for node in scene.nodes() {
-        let carry = object::Transform::from(node.transform());
-
-        let maybe_camera = get_camera(&node, carry);
-        if maybe_camera.is_some() {
-            return maybe_camera;
-        }
-
-        let maybe_camera = visit_nodes_t(
-            node.children(),
-            carry,
-            get_camera,
-        );
-        if maybe_camera.is_some() {
-            return maybe_camera;
-        }
-    }
-
-    None
-}
-
-pub fn extract<T>(
+pub fn extract<T: Clone>(
     scene: &Scene,
     parse_fn: fn(&Node, Transform) -> Option<T>,
 ) -> Option<T> {
@@ -39,17 +17,46 @@ pub fn extract<T>(
             return maybe_object;
         }
 
-        let maybe_object = visit_nodes_t(
+        let objects = visit_nodes(
             node.children(),
             carry,
             parse_fn,
+            true,
         );
-        if maybe_object.is_some() {
-            return maybe_object;
+        if !objects.is_empty() {
+            return objects.get(0).cloned();
         }
     }
 
     None
+}
+
+pub fn extract_all<T>(
+    scene: &Scene,
+    parse_fn: fn(&Node, Transform) -> Option<T>,
+) -> Vec<T> {
+    let mut result = vec![];
+    for node in scene.nodes() {
+        let carry = object::Transform::from(node.transform());
+
+        let maybe_object = parse_fn(&node, carry);
+        if let Some(object) = maybe_object {
+            result.push(object);
+        }
+
+        let objects = visit_nodes(
+            node.children(),
+            carry,
+            parse_fn,
+            false,
+        );
+
+        if !objects.is_empty() {
+            result.extend(objects);
+        }
+    }
+
+    result
 }
 
 pub fn get_camera(node: &Node, carry: Transform) -> Option<object::Camera> {
@@ -71,28 +78,6 @@ pub fn get_camera(node: &Node, carry: Transform) -> Option<object::Camera> {
     None
 }
 
-pub fn extract_mesh(scene: &Scene) -> Option<object::Mesh> {
-    for node in scene.nodes() {
-        let transform = object::Transform::from(node.transform());
-
-        let maybe_mesh = get_mesh(&node, transform);
-        if maybe_mesh.is_some() {
-            return maybe_mesh;
-        }
-
-        let maybe_mesh = visit_nodes_t(
-            node.children(),
-            transform,
-            get_mesh,
-        );
-        if maybe_mesh.is_some() {
-            return maybe_mesh;
-        }
-    }
-
-    None
-}
-
 pub fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
     if let Some(_) = node.mesh() {
         return Some(object::Mesh {
@@ -103,27 +88,36 @@ pub fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
     None
 }
 
-fn visit_nodes_t<T>(
+fn visit_nodes<T>(
     nodes: iter::Children,
     carry: Transform,
     parse_fn: fn(&Node, Transform) -> Option<T>,
-) -> Option<T> {
+    break_on_first: bool,
+) -> Vec<T> {
+    let mut result = vec![];
     for node in nodes {
         if let Some(mesh) = parse_fn(&node, carry) {
-            return Some(mesh);
+            result.push(mesh);
+            if break_on_first {
+                return result;
+            }
         }
 
         let carry = carry * object::Transform::from(node.transform());
 
-        let maybe_mesh = visit_nodes_t(
+        let objects = visit_nodes(
             node.children(),
             carry,
             parse_fn,
+            break_on_first,
         );
-        if maybe_mesh.is_some() {
-            return maybe_mesh;
+        if !objects.is_empty() {
+            result.extend(objects);
+            if break_on_first {
+                return result;
+            }
         }
     }
 
-    None
+    result
 }

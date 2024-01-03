@@ -32,8 +32,7 @@ pub async fn render(
         .ok_or(anyhow!("No default scene"))?;
     let camera_props = crate::gltf::extract(&scene, crate::gltf::get_camera)
         .ok_or(anyhow!("No camera found"))?;
-    let mesh_props = crate::gltf::extract(&scene, crate::gltf::get_mesh)
-        .ok_or(anyhow!("No mesh found"))?;
+    let mesh_props = crate::gltf::extract_all(&scene, crate::gltf::get_mesh);
 
     log::info!("Time parse: {:?}", std::time::Instant::now() - start);
 
@@ -47,17 +46,20 @@ pub async fn render(
     let mut mesh = Model::<ColorMaterial>::new(&context, &model)
         .map_err(|e| anyhow!("Error loading model: {:?}", e))?;
 
-    mesh.iter_mut().for_each(|m| {
-        let final_transform = mesh_props.parent_transform * mesh_props.transform;
-        m.set_transformation(final_transform.into());
+    mesh.iter_mut()
+        .enumerate()
+        .for_each(|(pos, m)| {
+            let mesh_props = mesh_props.get(pos).unwrap();
+            let final_transform = mesh_props.parent_transform * mesh_props.transform;
+            m.set_transformation(final_transform.into());
 
-        m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_texture));
-        m.material.is_transparent = true;
-        // todo do we need this?
-        m.material.render_states.cull = Cull::Back;
-        m.material.render_states.cull = Cull::None;
-        m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;
-    });
+            m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_texture));
+            m.material.is_transparent = true;
+            // todo do we need this?
+            m.material.render_states.cull = Cull::Back;
+            m.material.render_states.cull = Cull::None;
+            m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;
+        });
 
     let camera_transform = camera_props.parent_transform * camera_props.transform;
     let origin = nalgebra::Point3::origin();

@@ -4,7 +4,7 @@ use nalgebra::Matrix4;
 use three_d::Vector4;
 use three_d_asset::Mat4;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Camera {
     pub parent_transform: Transform,
     pub transform: Transform,
