@@ -33,3 +33,4 @@ serde_json = "1.0.108"
 env_logger = "0.10.1"
 image = { version = "0.24.7", features = ["webp-encoder"] }
 cgmath = "0.18.0"
+thiserror = "1.0.56"

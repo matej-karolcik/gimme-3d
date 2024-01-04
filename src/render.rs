@@ -1,11 +1,12 @@
 use std::f32::consts::FRAC_1_SQRT_2;
 
-use anyhow::{anyhow, Result};
+use anyhow::{Context, Result};
 use nalgebra::Quaternion;
 use three_d::{Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, RenderTarget, Texture2D, Texture2DRef, vec3};
 use three_d_asset::{Interpolation, radians, TextureData, Viewport, Wrapping};
 use three_d_asset::io::Serialize;
 
+use crate::error::Error;
 use crate::object::Transform;
 
 pub type RawPixels = Vec<u8>;
@@ -21,35 +22,30 @@ pub async fn render(
 
     let to_load = &[texture_path, model_path];
     let loaded_future = three_d_asset::io::load_async(to_load);
-    let mut loaded_assets = loaded_future.await
-        .map_err(|e| anyhow!("Error loading assets: {:?}", e))?;
+    let mut loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
 
     log::info!("Time load: {:?}", std::time::Instant::now() - start);
 
-    let model_slice = loaded_assets.get(model_path)
-        .map_err(|e| anyhow!("Error loading model: {:?}", e))?;
-
-    let gltf = gltf::Gltf::from_slice(model_slice)
-        .map_err(|e| anyhow!("Error parsing gltf: {:?}", e))?;
+    let model_slice = loaded_assets.get(model_path).map_err(|e| Error::AssetLoadingError(e))?;
+    let gltf = gltf::Gltf::from_slice(model_slice).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
-    let scene = doc.default_scene()
-        .ok_or(anyhow!("No default scene"))?;
-    let camera_props = crate::gltf::extract(&scene, crate::gltf::get_camera)
-        .ok_or(anyhow!("No camera found"))?;
+    let scene = doc.default_scene().ok_or(Error::NoDefaultScene)?;
+    let camera_props = crate::gltf::extract(&scene, crate::gltf::get_camera).ok_or(Error::NoCamera)?;
     let mesh_props = crate::gltf::extract_all(&scene, crate::gltf::get_mesh);
+
+    if mesh_props.is_empty() {
+        return Err(Error::NoMesh.into());
+    }
 
     log::info!("Time parse: {:?}", std::time::Instant::now() - start);
 
-    let mut cpu_texture: CpuTexture = loaded_assets.deserialize(texture_path)
-        .map_err(|e| anyhow!("Error loading texture: {:?}", e))?;
+    let mut cpu_texture: CpuTexture = loaded_assets.deserialize(texture_path).context("loading texture")?;
     cpu_texture.data.to_linear_srgb();
 
-    let model = loaded_assets.deserialize(model_path)
-        .map_err(|e| anyhow!("Error loading model: {:?}", e))?;
+    let model = loaded_assets.deserialize(model_path).context("loading model")?;
 
-    let mut mesh = Model::<ColorMaterial>::new(&context, &model)
-        .map_err(|e| anyhow!("Error loading model: {:?}", e))?;
+    let mut mesh = Model::<ColorMaterial>::new(&context, &model).context("creating mesh")?;
 
     mesh.iter_mut()
         .enumerate()
@@ -113,7 +109,6 @@ pub async fn render(
         .render(&camera, &mesh, &[])
         .read_color();
 
-    // todo error handling
     let result = CpuTexture {
         data: TextureData::RgbaU8(pixels.clone()),
         width: texture.width(),
