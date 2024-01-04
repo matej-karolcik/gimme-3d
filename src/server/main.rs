@@ -1,10 +1,11 @@
 use std::io::Write;
+use std::sync::Arc;
 
 use anyhow::Result;
 use env_logger::Target;
 use serde::{Deserialize, Serialize};
 use three_d::HeadlessContext;
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, Semaphore};
 use warp::Filter;
 use warp::reply::Response;
 
@@ -62,16 +63,20 @@ async fn main() {
 
 
 async fn serve(request_tx: mpsc::Sender<(Request, mpsc::Sender<Result<RawPixels>>)>) {
+    let semaphore = Arc::new(Semaphore::new(1));
     let render = warp::post()
         .and(warp::path("render"))
         .and(warp::body::json())
         .and(warp::header::optional("accept"))
-        .and_then(move |r: Request, accept_header: Option<String>| {
+        .and(warp::any().map(move || semaphore.clone()))
+        .and_then(move |r: Request, accept_header: Option<String>, sem: Arc<Semaphore>| {
             let request_tx = request_tx.clone();
             async move {
+                let permit = sem.clone().acquire_owned().await.unwrap();
                 let (response_tx, mut response_rx) = mpsc::channel(1);
                 request_tx.try_send((r, response_tx)).unwrap();
                 let r = response_rx.recv().await.unwrap().unwrap();
+                drop(permit);
 
                 if let Some(mime) = accept_header {
                     if mime.contains("image/webp") {
