@@ -5,7 +5,7 @@ use anyhow::Result;
 use env_logger::Target;
 use serde::{Deserialize, Serialize};
 use three_d::HeadlessContext;
-use tokio::sync::{mpsc, Semaphore};
+use tokio::sync::{mpsc, oneshot, Semaphore};
 use warp::Filter;
 use warp::reply::Response;
 
@@ -28,23 +28,11 @@ struct LogEntry {
 
 #[tokio::main]
 async fn main() {
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .target(Target::Stdout)
-        .format(|buf, record| {
-            let entry = LogEntry {
-                level: record.level().to_string(),
-                target: record.target().to_string(),
-                message: format!("{}", record.args()),
-            };
-            let content = serde_json::to_string(&entry).unwrap();
-            writeln!(buf, "{}", content)
-        })
-        .init();
+    init_logger();
 
     let context = HeadlessContext::new().unwrap();
 
-    let (request_tx, mut request_rx) = mpsc::channel::<(Request, mpsc::Sender<Result<RawPixels>>)>(1);
+    let (request_tx, mut request_rx) = mpsc::channel::<(Request, oneshot::Sender<Result<RawPixels>>)>(10);
 
     tokio::spawn(async move { serve(request_tx).await; });
 
@@ -57,31 +45,32 @@ async fn main() {
             request.width,
             request.height,
         ).await;
-        response_tx.send(pixels).await.unwrap();
+        let _ = response_tx.send(pixels);
     }
 }
 
-
-async fn serve(request_tx: mpsc::Sender<(Request, mpsc::Sender<Result<RawPixels>>)>) {
+async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>) {
     let semaphore = Arc::new(Semaphore::new(1));
     let render = warp::post()
         .and(warp::path("render"))
         .and(warp::body::json())
         .and(warp::header::optional("accept"))
         .and(warp::any().map(move || semaphore.clone()))
-        .and_then(move |r: Request, accept_header: Option<String>, sem: Arc<Semaphore>| {
-            let request_tx = request_tx.clone();
+        .and(warp::any().map(move || request_tx.clone()))
+        .and_then(move |r: Request, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>| {
             async move {
                 let permit = sem.clone().acquire_owned().await.unwrap();
-                let (response_tx, mut response_rx) = mpsc::channel(1);
+
+                let (response_tx, response_rx) = oneshot::channel();
                 request_tx.try_send((r, response_tx)).unwrap();
-                let r = response_rx.recv().await.unwrap().unwrap();
+                let pixels = response_rx.await.unwrap().unwrap();
+
                 drop(permit);
 
                 if let Some(mime) = accept_header {
                     if mime.contains("image/webp") {
                         let start = std::time::Instant::now();
-                        let img = image::load_from_memory(&r).unwrap();
+                        let img = image::load_from_memory(&pixels).unwrap();
                         let mut writer = std::io::Cursor::new(Vec::new());
                         img.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
                         log::info!("Time webp: {:?}", start.elapsed());
@@ -95,7 +84,7 @@ async fn serve(request_tx: mpsc::Sender<(Request, mpsc::Sender<Result<RawPixels>
 
                 Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
                     .header("Content-Type", "image/png")
-                    .body(r.into())
+                    .body(pixels.into())
                     .unwrap())
             }
         });
@@ -109,4 +98,20 @@ async fn serve(request_tx: mpsc::Sender<(Request, mpsc::Sender<Result<RawPixels>
     warp::serve(routes)
         .run(([0, 0, 0, 0], 3030))
         .await;
+}
+
+fn init_logger() {
+    env_logger::builder()
+        .filter_level(log::LevelFilter::Info)
+        .target(Target::Stdout)
+        .format(|buf, record| {
+            let entry = LogEntry {
+                level: record.level().to_string(),
+                target: record.target().to_string(),
+                message: format!("{}", record.args()),
+            };
+            let content = serde_json::to_string(&entry).unwrap();
+            writeln!(buf, "{}", content)
+        })
+        .init();
 }
