@@ -1,7 +1,12 @@
+use std::f32::consts::FRAC_1_SQRT_2;
+
 use anyhow::{anyhow, Result};
+use nalgebra::Quaternion;
 use three_d::{Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, RenderTarget, Texture2D, Texture2DRef, vec3};
 use three_d_asset::{Interpolation, radians, TextureData, Viewport, Wrapping};
 use three_d_asset::io::Serialize;
+
+use crate::object::Transform;
 
 pub type RawPixels = Vec<u8>;
 
@@ -55,8 +60,6 @@ pub async fn render(
 
             m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_texture));
             m.material.is_transparent = true;
-            // todo do we need this?
-            m.material.render_states.cull = Cull::Back;
             m.material.render_states.cull = Cull::None;
             m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;
         });
@@ -78,9 +81,8 @@ pub async fn render(
         camera_props.zfar,
     );
 
-    // todo rework this
-    if (camera_props.parent_transform.decomposed().1[0].abs() - std::f32::consts::FRAC_1_SQRT_2).abs() < 0.0001
-        && camera_props.transform.has_equal_rotation(&crate::object::Transform::from_quaternion(nalgebra::Quaternion::identity())) {
+    if (camera_props.parent_transform.decomposed().1[0].abs() - FRAC_1_SQRT_2).abs() < 0.0001
+        && camera_props.transform.has_equal_rotation(&Transform::from_quaternion(Quaternion::identity())) {
         camera.roll(three_d_asset::Deg::<f32>(90.0));
     }
 

@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use anyhow::Result;
 use env_logger::Target;
 use serde::{Deserialize, Serialize};
@@ -16,11 +18,27 @@ struct Request {
     height: u32,
 }
 
+#[derive(Serialize)]
+struct LogEntry {
+    level: String,
+    target: String,
+    message: String,
+}
+
 #[tokio::main]
 async fn main() {
     env_logger::builder()
         .filter_level(log::LevelFilter::Info)
         .target(Target::Stdout)
+        .format(|buf, record| {
+            let entry = LogEntry {
+                level: record.level().to_string(),
+                target: record.target().to_string(),
+                message: format!("{}", record.args()),
+            };
+            let content = serde_json::to_string(&entry).unwrap();
+            writeln!(buf, "{}", content)
+        })
         .init();
 
     let context = HeadlessContext::new().unwrap();
@@ -47,24 +65,31 @@ async fn serve(request_tx: mpsc::Sender<(Request, mpsc::Sender<Result<RawPixels>
     let render = warp::post()
         .and(warp::path("render"))
         .and(warp::body::json())
-        .and_then(move |r: Request| {
+        .and(warp::header::optional("accept"))
+        .and_then(move |r: Request, accept_header: Option<String>| {
             let request_tx = request_tx.clone();
             async move {
                 let (response_tx, mut response_rx) = mpsc::channel(1);
                 request_tx.try_send((r, response_tx)).unwrap();
                 let r = response_rx.recv().await.unwrap().unwrap();
 
-                // this is fast only on linux for some reason
-                // let start = std::time::Instant::now();
-                // let img = image::load_from_memory(&r).unwrap();
-                // let mut writer = std::io::Cursor::new(Vec::new());
-                // img.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
-                // log::info!("Converted to webp in: {:?}", start.elapsed());
+                if let Some(mime) = accept_header {
+                    if mime.contains("image/webp") {
+                        let start = std::time::Instant::now();
+                        let img = image::load_from_memory(&r).unwrap();
+                        let mut writer = std::io::Cursor::new(Vec::new());
+                        img.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
+                        log::info!("Time webp: {:?}", start.elapsed());
+
+                        return Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
+                            .header("Content-Type", "image/webp")
+                            .body(writer.into_inner().into())
+                            .unwrap());
+                    }
+                }
 
                 Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
-                    // .header("Content-Type", "image/webp")
                     .header("Content-Type", "image/png")
-                    // .body(writer.into_inner().into())
                     .body(r.into())
                     .unwrap())
             }

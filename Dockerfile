@@ -18,7 +18,9 @@ COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    cargo build --release --bin server
+    --mount=type=cache,target=/usr/src/renderer/target \
+    cargo build --release --bin server \
+    && mv target/release/server /tmp/server
 
 FROM debian:trixie-20231218-slim
 
@@ -31,6 +33,6 @@ RUN apt-get update && apt-get install -y \
     libxi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/renderer/target/release/server /app/server
+COPY --from=builder /tmp/server /app/server
 
 ENTRYPOINT ["xvfb-run", "-a", "/app/server"]

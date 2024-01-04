@@ -7,8 +7,8 @@ async fn main() {
     let context = HeadlessContext::new().unwrap();
     let _ = std::fs::create_dir("results");
 
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    return;
+    // run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
+    // return;
 
 
     let dirs = std::fs::read_dir("glb").unwrap();
