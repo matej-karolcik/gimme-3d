@@ -17,6 +17,10 @@ path = "src/render/main.rs"
 name = "server"
 path = "src/server/main.rs"
 
+[[bin]]
+name = "aa"
+path = "src/antialias/main.rs"
+
 
 [dependencies]
 gltf = "1.4.0"
@@ -34,3 +38,6 @@ env_logger = "0.10.1"
 image = { version = "0.24.7", features = ["webp-encoder"] }
 cgmath = "0.18.0"
 thiserror = "1.0.56"
+imageproc = "0.23.0"
+resize = "0.8.3"
+fast_image_resize = "2.7.3"

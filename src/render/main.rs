@@ -8,15 +8,6 @@ async fn main() {
     let _ = std::fs::create_dir("results");
 
     run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
     return;
 
 
@@ -36,9 +27,13 @@ async fn run(model_path: &str, context: &HeadlessContext) {
     let width = 2000;
     let height = 2000;
 
+    let textures = vec![
+        String::from("https://www.w3.org/MarkUp/Test/xhtml-print/20050519/tests/jpeg420exif.jpg"),
+    ];
+
     let maybe_pixels = rs3d::render::render(
-        model_path,
-        "https://www.w3.org/MarkUp/Test/xhtml-print/20050519/tests/jpeg420exif.jpg",
+        String::from(model_path),
+        textures,
         &context,
         width,
         height,

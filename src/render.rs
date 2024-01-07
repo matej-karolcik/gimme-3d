@@ -12,21 +12,22 @@ use crate::object::Transform;
 pub type RawPixels = Vec<u8>;
 
 pub async fn render(
-    model_path: &str,
-    texture_path: &str,
+    model_path: String,
+    textures: Vec<String>,
     context: &three_d::Context,
     width: u32,
     height: u32,
 ) -> Result<RawPixels> {
     let start = std::time::Instant::now();
 
-    let to_load = &[texture_path, model_path];
-    let loaded_future = three_d_asset::io::load_async(to_load);
+    let mut to_load = textures.clone();
+    to_load.push(model_path.clone());
+    let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
     let mut loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
 
     log::info!("Time load: {:?}", std::time::Instant::now() - start);
 
-    let model_slice = loaded_assets.get(model_path).map_err(|e| Error::AssetLoadingError(e))?;
+    let model_slice = loaded_assets.get(model_path.clone()).map_err(|e| Error::AssetLoadingError(e))?;
     let gltf = gltf::Gltf::from_slice(model_slice).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
@@ -40,12 +41,21 @@ pub async fn render(
 
     log::info!("Time parse: {:?}", std::time::Instant::now() - start);
 
-    let mut cpu_texture: CpuTexture = loaded_assets.deserialize(texture_path).context("loading texture")?;
-    cpu_texture.data.to_linear_srgb();
+    let cpu_textures: Vec<CpuTexture> = textures.iter()
+        .map(|texture_path| {
+            let mut cpu_texture: CpuTexture = loaded_assets
+                .deserialize(texture_path)
+                .context("loading texture")
+                .unwrap();
+            cpu_texture.data.to_linear_srgb();
+            cpu_texture
+        })
+        .collect();
 
-    let model = loaded_assets.deserialize(model_path).context("loading model")?;
+    let model = loaded_assets.deserialize(model_path.clone().as_str()).context("loading model")?;
 
     let mut mesh = Model::<ColorMaterial>::new(&context, &model).context("creating mesh")?;
+    let num_textures = cpu_textures.len();
 
     mesh.iter_mut()
         .enumerate()
@@ -54,7 +64,7 @@ pub async fn render(
             let final_transform = mesh_props.parent_transform * mesh_props.transform;
             m.set_transformation(final_transform.into());
 
-            m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_texture));
+            m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_textures[pos % num_textures]));
             m.material.is_transparent = true;
             m.material.render_states.cull = Cull::None;
             m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;

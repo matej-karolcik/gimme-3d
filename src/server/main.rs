@@ -13,8 +13,8 @@ use rs3d::render::RawPixels;
 
 #[derive(Deserialize, Serialize)]
 struct Request {
-    model_path: String,
-    texture_path: String,
+    model: String,
+    textures: Vec<String>,
     width: u32,
     height: u32,
 }
@@ -39,8 +39,8 @@ async fn main() {
     loop {
         let (request, response_tx) = request_rx.recv().await.unwrap();
         let pixels = rs3d::render::render(
-            request.model_path.as_str(),
-            request.texture_path.as_str(),
+            request.model,
+            request.textures,
             &context,
             request.width,
             request.height,
@@ -59,7 +59,7 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
         .and(warp::any().map(move || request_tx.clone()))
         .and_then(move |r: Request, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>| {
             async move {
-                let permit = sem.clone().acquire_owned().await.unwrap();
+                let permit = sem.acquire_owned().await.unwrap();
 
                 let (response_tx, response_rx) = oneshot::channel();
                 request_tx.try_send((r, response_tx)).unwrap();
