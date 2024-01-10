@@ -97,7 +97,7 @@ pub fn get_light(node: &Node, carry: Transform) -> Option<object::Light> {
         let b = (color[2] * 255.0).round() as u8;
 
         return Some(object::Light {
-            light_type: light.kind().into(),
+            kind: light.kind().into(),
             parent_transform: carry,
             transform: object::Transform::from(node.transform()),
             color: [r, g, b],
@@ -143,8 +143,9 @@ fn visit_nodes<T>(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use anyhow::{anyhow, Result};
+
+    use super::*;
 
     #[test]
     fn test_camera() -> Result<()> {

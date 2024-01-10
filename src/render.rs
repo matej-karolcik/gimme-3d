@@ -7,7 +7,7 @@ use three_d_asset::{Interpolation, radians, Srgba, TextureData, Viewport, Wrappi
 use three_d_asset::io::Serialize;
 
 use crate::error::Error;
-use crate::object::{Kind, Light, Transform};
+use crate::object::{LightKind, Light, Transform};
 
 pub type RawPixels = Vec<u8>;
 
@@ -157,8 +157,8 @@ fn create_point_light(
     let light_position = light_transform.matrix.transform_point(&origin);
     let light_color = Srgba::from(light_props.color);
 
-    match light_props.light_type {
-        Kind::Point => {
+    match light_props.kind {
+        LightKind::Point => {
             Some(Box::new(PointLight::new(
                 &context,
                 light_props.intensity,

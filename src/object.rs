@@ -24,7 +24,7 @@ pub struct Mesh {
 
 #[derive(Debug, Clone)]
 pub struct Light {
-    pub light_type: Kind,
+    pub kind: LightKind,
     pub parent_transform: Transform,
     pub transform: Transform,
     // [0, 255]
@@ -38,7 +38,7 @@ pub struct Transform {
 }
 
 #[derive(Debug, Clone)]
-pub enum Kind {
+pub enum LightKind {
     Directional,
     Point,
     Spot {
@@ -47,7 +47,7 @@ pub enum Kind {
     },
 }
 
-impl From<gltf::khr_lights_punctual::Kind> for Kind {
+impl From<gltf::khr_lights_punctual::Kind> for LightKind {
     fn from(kind: gltf::khr_lights_punctual::Kind) -> Self {
         match kind {
             gltf::khr_lights_punctual::Kind::Directional => Self::Directional,
@@ -63,7 +63,7 @@ impl From<gltf::khr_lights_punctual::Kind> for Kind {
     }
 }
 
-fn float_compare(a: f32, b: f32) -> bool {
+fn float_eq(a: f32, b: f32) -> bool {
     (a - b).abs() < 0.0001
 }
 
@@ -71,10 +71,10 @@ impl Transform {
     pub fn has_equal_rotation(&self, other: &Self) -> bool {
         let (_, r1, _) = self.decomposed();
         let (_, r2, _) = other.decomposed();
-        float_compare(r1[0], r2[0])
-            && float_compare(r1[1], r2[1])
-            && float_compare(r1[2], r2[2])
-            && float_compare(r1[3], r2[3])
+        float_eq(r1[0], r2[0])
+            && float_eq(r1[1], r2[1])
+            && float_eq(r1[2], r2[2])
+            && float_eq(r1[3], r2[3])
     }
 
     pub fn from_quaternion(quaternion: nalgebra::Quaternion<f32>) -> Self {
@@ -102,12 +102,16 @@ impl Transform {
         let sx = i.x.magnitude();
         let sy = i.y.magnitude();
         let sz = i.determinant().signum() * i.z.magnitude();
+
         let scale = [sx, sy, sz];
+
         i.x = i.x.mul(1.0 / sx);
         i.y = i.y.mul(1.0 / sy);
         i.z = i.z.mul(1.0 / sz);
+
         let r = cgmath::Quaternion::from(i);
         let rotation = [r.v.x, r.v.y, r.v.z, r.s];
+
         (translation, rotation, scale)
     }
 }
@@ -156,5 +160,18 @@ impl Mul for Transform {
         Self {
             matrix: self.matrix * rhs.matrix,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_float_eq() {
+        assert!(float_eq(0.0, 0.0));
+        assert!(float_eq(0.0001, 0.0001));
+        assert!(float_eq(-3.0, -3.0));
+        assert_eq!(float_eq(0.0001, 0.0002), false);
     }
 }
