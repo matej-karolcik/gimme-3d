@@ -7,7 +7,10 @@ async fn main() {
     let context = HeadlessContext::new().unwrap();
     let _ = std::fs::create_dir("results");
 
-    run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
+    // run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
+    // run("glb/1_p1_t-shirt.glb", &context).await;
+    // run("glb/PhoneCase_IPhone12.glb", &context).await;
+    run("output/PhoneCase_IPhone12_out/PhoneCase_IPhone12.gltf", &context).await;
     return;
 
 

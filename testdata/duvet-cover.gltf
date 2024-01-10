@@ -1,0 +1,499 @@
+{
+    "asset": {
+        "generator": "FBX2glTF v0.9.7",
+        "version": "2.0"
+    },
+    "scene": 0,
+    "extensionsUsed": [
+        "KHR_lights_punctual"
+    ],
+    "buffers": [
+        {
+            "byteLength": 20193360,
+            "uri": "buffer.bin"
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 3949248,
+            "byteOffset": 0,
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1985400,
+            "byteOffset": 3949248,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1985400,
+            "byteOffset": 5934648,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1323600,
+            "byteOffset": 7920048,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1720320,
+            "byteOffset": 9243648,
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 866700,
+            "byteOffset": 10963968,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 866700,
+            "byteOffset": 11830668,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1155600,
+            "byteOffset": 12697368,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 577800,
+            "byteOffset": 13852968,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 2460672,
+            "byteOffset": 14430768,
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1238220,
+            "byteOffset": 16891440,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 1238220,
+            "byteOffset": 18129660,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteLength": 825480,
+            "byteOffset": 19367880,
+            "target": 34962
+        }
+    ],
+    "scenes": [
+        {
+            "name": "Root Scene",
+            "nodes": [
+                0
+            ]
+        }
+    ],
+    "accessors": [
+        {
+            "componentType": 5125,
+            "type": "SCALAR",
+            "count": 987312,
+            "bufferView": 0,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC3",
+            "count": 165450,
+            "bufferView": 1,
+            "byteOffset": 0,
+            "min": [
+                -0.00581787852570415,
+                -0.00194602413102984,
+                -0.000188039179192856
+            ],
+            "max": [
+                0.00543976947665215,
+                0.00191639317199588,
+                0.00134314491879195
+            ]
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC3",
+            "count": 165450,
+            "bufferView": 2,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC2",
+            "count": 165450,
+            "bufferView": 3,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5125,
+            "type": "SCALAR",
+            "count": 430080,
+            "bufferView": 4,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC3",
+            "count": 72225,
+            "bufferView": 5,
+            "byteOffset": 0,
+            "min": [
+                -0.00528670288622379,
+                -0.00389959244057536,
+                -0.000118232266686391
+            ],
+            "max": [
+                0.00522062368690968,
+                0.00388556206598878,
+                0.00072861899388954
+            ]
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC3",
+            "count": 72225,
+            "bufferView": 6,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC4",
+            "count": 72225,
+            "bufferView": 7,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC2",
+            "count": 72225,
+            "bufferView": 8,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5125,
+            "type": "SCALAR",
+            "count": 615168,
+            "bufferView": 9,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC3",
+            "count": 103185,
+            "bufferView": 10,
+            "byteOffset": 0,
+            "min": [
+                -0.00552969938144088,
+                0.00232687895186245,
+                0.000195722372154705
+            ],
+            "max": [
+                0.000727074104361236,
+                0.00751889450475574,
+                0.00152012449689209
+            ]
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC3",
+            "count": 103185,
+            "bufferView": 11,
+            "byteOffset": 0
+        },
+        {
+            "componentType": 5126,
+            "type": "VEC2",
+            "count": 103185,
+            "bufferView": 12,
+            "byteOffset": 0
+        }
+    ],
+    "images": [
+        {
+            "name": "base_color_texture",
+            "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+        }
+    ],
+    "samplers": [
+        {}
+    ],
+    "textures": [
+        {
+            "name": "base_color_texture",
+            "sampler": 0,
+            "source": 0
+        }
+    ],
+    "materials": [
+        {
+            "name": "Material",
+            "alphaMode": "OPAQUE",
+            "extras": {
+                "fromFBX": {
+                    "shadingModel": "Phong",
+                    "isTruePBR": false
+                }
+            },
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "index": 0,
+                    "texCoord": 0
+                },
+                "baseColorFactor": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "metallicFactor": 0.400000005960464,
+                "roughnessFactor": 1.0
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "Back",
+            "primitives": [
+                {
+                    "material": 0,
+                    "mode": 4,
+                    "attributes": {
+                        "NORMAL": 2,
+                        "POSITION": 1,
+                        "TEXCOORD_0": 3
+                    },
+                    "indices": 0
+                }
+            ]
+        },
+        {
+            "name": "Front",
+            "primitives": [
+                {
+                    "material": 0,
+                    "mode": 4,
+                    "attributes": {
+                        "COLOR_0": 7,
+                        "NORMAL": 6,
+                        "POSITION": 5,
+                        "TEXCOORD_0": 8
+                    },
+                    "indices": 4
+                }
+            ]
+        },
+        {
+            "name": "Pillow",
+            "primitives": [
+                {
+                    "material": 0,
+                    "mode": 4,
+                    "attributes": {
+                        "NORMAL": 11,
+                        "POSITION": 10,
+                        "TEXCOORD_0": 12
+                    },
+                    "indices": 9
+                }
+            ]
+        }
+    ],
+    "cameras": [
+        {
+            "name": "",
+            "type": "perspective",
+            "perspective": {
+                "znear": 10.0,
+                "zfar": 10000.0,
+                "aspectRatio": 1.5,
+                "yfov": 0.471089959144592
+            }
+        }
+    ],
+    "nodes": [
+        {
+            "name": "RootNode",
+            "translation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                0.0,
+                0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "children": [
+                1
+            ]
+        },
+        {
+            "name": "1_p1_duvet-cover_1350x2000",
+            "translation": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "rotation": [
+                -0.707106828689575,
+                0.0,
+                0.0,
+                0.707106709480286
+            ],
+            "scale": [
+                100.0,
+                100.0,
+                100.0
+            ],
+            "children": [
+                2,
+                3,
+                4,
+                5,
+                6
+            ]
+        },
+        {
+            "name": "Light",
+            "translation": [
+                -0.0274919532239437,
+                0.0135894734412432,
+                0.0476229451596737
+            ],
+            "rotation": [
+                -0.690916061401367,
+                0.700332880020142,
+                0.15387561917305,
+                -0.0921474695205688
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "extensions": {
+                "KHR_lights_punctual": {
+                    "light": 0
+                }
+            }
+        },
+        {
+            "name": "Camera",
+            "translation": [
+                -0.000299999985145405,
+                0.0,
+                0.0303000006824732
+            ],
+            "rotation": [
+                -2.35098870164458e-38,
+                -2.98023223876953e-08,
+                7.88860905221012e-31,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "camera": 0
+        },
+        {
+            "name": "Back",
+            "translation": [
+                2.81489392364165e-05,
+                0.0016889680409804,
+                -0.00030553518445231
+            ],
+            "rotation": [
+                -1.32348614018559e-23,
+                2.74273778791966e-26,
+                -0.00207235408015549,
+                0.999997854232788
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "mesh": 0
+        },
+        {
+            "name": "Front",
+            "translation": [
+                -0.000339151825755835,
+                -0.00303230481222272,
+                0.000152093693031929
+            ],
+            "rotation": [
+                -1.32348898008484e-23,
+                -0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                2.01584577560425
+            ],
+            "mesh": 1
+        },
+        {
+            "name": "Pillow",
+            "translation": [
+                0.0,
+                0.0,
+                -0.000412095745559782
+            ],
+            "rotation": [
+                -1.32348898008484e-23,
+                -0.0,
+                0.0,
+                1.0
+            ],
+            "scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "mesh": 2
+        }
+    ],
+    "extensions": {
+        "KHR_lights_punctual": {
+            "lights": [
+                {
+                    "name": "",
+                    "color": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "intensity": 1000.0,
+                    "type": "point"
+                }
+            ]
+        }
+    }
+}

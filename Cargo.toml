@@ -19,7 +19,7 @@ path = "src/server/main.rs"
 
 
 [dependencies]
-gltf = "1.4.0"
+gltf = { version = "1.4.0", features = ["KHR_lights_punctual"] }
 anyhow = "1.0.75"
 clap = "4.4.11"
 tokio = { version = "1.35.0", features = ["rt", "rt-multi-thread", "macros"] }

@@ -88,6 +88,25 @@ pub fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
     None
 }
 
+pub fn get_light(node: &Node, carry: Transform) -> Option<object::Light> {
+    if let Some(light) = node.light() {
+        let color = light.color();
+
+        let r = (color[0] * 255.0).round() as u8;
+        let g = (color[1] * 255.0).round() as u8;
+        let b = (color[2] * 255.0).round() as u8;
+
+        return Some(object::Light {
+            light_type: light.kind().into(),
+            parent_transform: carry,
+            transform: object::Transform::from(node.transform()),
+            color: [r, g, b],
+            intensity: light.intensity(),
+        });
+    }
+    None
+}
+
 fn visit_nodes<T>(
     nodes: iter::Children,
     carry: Transform,
@@ -120,4 +139,46 @@ fn visit_nodes<T>(
     }
 
     result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use anyhow::{anyhow, Result};
+
+    #[test]
+    fn test_camera() -> Result<()> {
+        let gltf = load_test_model("testdata/iphone.gltf")?;
+        let doc = gltf.document;
+        let scene = doc.default_scene().ok_or(anyhow!("no default scene"))?;
+        let camera = extract(&scene, get_camera);
+        // todo compare properties
+        assert!(camera.is_some());
+        Ok(())
+    }
+
+    #[test]
+    fn test_light() -> Result<()> {
+        let gltf = load_test_model("testdata/duvet-cover.gltf")?;
+        let doc = gltf.document;
+        let scene = doc.default_scene().ok_or(anyhow!("no default scene"))?;
+        let light = extract(&scene, get_light);
+        assert!(light.is_some());
+        Ok(())
+    }
+
+    #[test]
+    fn test_meshes() -> Result<()> {
+        let gltf = load_test_model("testdata/duvet-cover.gltf")?;
+        let doc = gltf.document;
+        let scene = doc.default_scene().ok_or(anyhow!("no default scene"))?;
+        let meshes = extract_all(&scene, get_mesh);
+        assert_eq!(meshes.len(), 3);
+        Ok(())
+    }
+
+    fn load_test_model(path: &str) -> Result<gltf::Gltf> {
+        let content = std::fs::read(path)?;
+        Ok(gltf::Gltf::from_slice(content.as_slice())?)
+    }
 }

@@ -2,12 +2,12 @@ use std::f32::consts::FRAC_1_SQRT_2;
 
 use anyhow::{Context, Result};
 use nalgebra::Quaternion;
-use three_d::{Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, RenderTarget, Texture2D, Texture2DRef, vec3};
-use three_d_asset::{Interpolation, radians, TextureData, Viewport, Wrapping};
+use three_d::{Attenuation, Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, PointLight, RenderTarget, Texture2D, Texture2DRef, vec3};
+use three_d_asset::{Interpolation, radians, Srgba, TextureData, Viewport, Wrapping};
 use three_d_asset::io::Serialize;
 
 use crate::error::Error;
-use crate::object::Transform;
+use crate::object::{Kind, Light, Transform};
 
 pub type RawPixels = Vec<u8>;
 
@@ -34,6 +34,7 @@ pub async fn render(
     let scene = doc.default_scene().ok_or(Error::NoDefaultScene)?;
     let camera_props = crate::gltf::extract(&scene, crate::gltf::get_camera).ok_or(Error::NoCamera)?;
     let mesh_props = crate::gltf::extract_all(&scene, crate::gltf::get_mesh);
+    let light_props = crate::gltf::extract(&scene, crate::gltf::get_light);
 
     if mesh_props.is_empty() {
         return Err(Error::NoMesh.into());
@@ -92,6 +93,12 @@ pub async fn render(
         camera.roll(three_d_asset::Deg::<f32>(90.0));
     }
 
+    let mut light: Option<Box<dyn three_d::Light>> = None;
+
+    if let Some(light_props) = light_props {
+        light = create_point_light(&light_props, &context);
+    }
+
     let mut texture = Texture2D::new_empty::<[u8; 4]>(
         &context,
         viewport.width,
@@ -111,12 +118,18 @@ pub async fn render(
         Wrapping::ClampToEdge,
     );
 
+    let lights = if let Some(light) = light.as_ref() {
+        vec![light.as_ref()]
+    } else {
+        vec![]
+    };
+
     let pixels = RenderTarget::new(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
         .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0))
-        .render(&camera, &mesh, &[])
+        .render(&camera, &mesh, lights.as_slice())
         .read_color();
 
     let result = CpuTexture {
@@ -133,4 +146,27 @@ pub async fn render(
     log::info!("Time render: {:?}", std::time::Instant::now() - start);
 
     Ok(result)
+}
+
+fn create_point_light(
+    light_props: &Light,
+    context: &three_d::Context,
+) -> Option<Box<dyn three_d::Light>> {
+    let origin = nalgebra::Point3::origin();
+    let light_transform = light_props.parent_transform * light_props.transform;
+    let light_position = light_transform.matrix.transform_point(&origin);
+    let light_color = Srgba::from(light_props.color);
+
+    match light_props.light_type {
+        Kind::Point => {
+            Some(Box::new(PointLight::new(
+                &context,
+                light_props.intensity,
+                light_color,
+                &vec3(light_position.x, light_position.y, light_position.z),
+                Attenuation::default(),
+            )))
+        }
+        _ => { None }
+    }
 }
