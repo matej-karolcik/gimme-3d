@@ -30,20 +30,22 @@ func run() error {
 	buf := new(bytes.Buffer)
 	writer := multipart.NewWriter(buf)
 
-	field, err := writer.CreateFormField("model")
-	if err != nil {
-		return fmt.Errorf("creating model form field: %w", err)
+	if err = addField(writer, "model", modelUrl); err != nil {
+		return fmt.Errorf("adding model field: %w", err)
 	}
-	if _, err = field.Write([]byte(modelUrl)); err != nil {
-		return fmt.Errorf("writing model url: %w", err)
+	if err = addField(writer, "width", "2000"); err != nil {
+		return fmt.Errorf("adding width field: %w", err)
+	}
+	if err = addField(writer, "height", "2000"); err != nil {
+		return fmt.Errorf("adding height field: %w", err)
 	}
 
-	field, err = writer.CreateFormFile("canvas[1]", "canvas.jpg")
+	field, err := writer.CreateFormFile("textures[1]", "canvas.jpg")
 	if err != nil {
-		return fmt.Errorf("creating canvas form file: %w", err)
+		return fmt.Errorf("creating texture form file: %w", err)
 	}
 	if _, err = io.Copy(field, f); err != nil {
-		return fmt.Errorf("writing canvas file: %w", err)
+		return fmt.Errorf("writing texture file: %w", err)
 	}
 
 	if err = writer.Close(); err != nil {
@@ -68,5 +70,17 @@ func run() error {
 	}
 
 	fmt.Printf("resp: %s\n", string(b))
+	return nil
+}
+
+func addField(writer *multipart.Writer, name, content string) error {
+	field, err := writer.CreateFormField(name)
+	if err != nil {
+		return fmt.Errorf("creating model form field: %w", err)
+	}
+	if _, err = field.Write([]byte(content)); err != nil {
+		return fmt.Errorf("writing model url: %w", err)
+	}
+
 	return nil
 }

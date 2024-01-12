@@ -34,7 +34,7 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         String::from("https://www.w3.org/MarkUp/Test/xhtml-print/20050519/tests/jpeg420exif.jpg"),
     ];
 
-    let maybe_pixels = rs3d::render::render(
+    let maybe_pixels = rs3d::render::render_urls(
         String::from(model_path),
         textures,
         &context,

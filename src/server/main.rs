@@ -1,10 +1,13 @@
+use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Formatter;
 use std::io::Write;
 use std::sync::Arc;
 
 use anyhow::Result;
 use bytes::BufMut;
 use env_logger::Target;
-use futures_util::TryStreamExt;
+use futures_util::{StreamExt, TryStreamExt};
 use serde::{Deserialize, Serialize};
 use three_d::HeadlessContext;
 use tokio::sync::{mpsc, oneshot, Semaphore};
@@ -12,6 +15,7 @@ use warp::Filter;
 use warp::multipart::FormData;
 use warp::reply::Response;
 
+use rs3d::error::ServerError;
 use rs3d::render::RawPixels;
 
 #[derive(Deserialize, Serialize)]
@@ -20,6 +24,52 @@ struct Request {
     textures: Vec<String>,
     width: u32,
     height: u32,
+}
+
+impl fmt::Debug for Request {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Request")
+            .field("model", &self.model)
+            .field("textures (length)", &self.textures.len())
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .finish()
+    }
+}
+
+impl Request {
+    async fn from_form_data(form: FormData) -> Result<Self> {
+        let fields: HashMap<String, String> = form.and_then(|mut field| async move {
+            let mut bytes: Vec<u8> = Vec::new();
+            while let Some(content) = field.data().await {
+                let content = content?;
+                bytes.put(content);
+            }
+            Ok((
+                field.name().to_string(),
+                String::from_utf8_lossy(&*bytes).trim().to_string(),
+            ))
+        })
+            .try_collect()
+            .await?;
+
+        let model = fields.get("model")
+            .ok_or(ServerError::MissingField("model".to_string()))?
+            .to_string();
+        let width = fields.get("width")
+            .ok_or(ServerError::MissingField("width".to_string()))?
+            .parse()?;
+        let height = fields.get("height")
+            .ok_or(ServerError::MissingField("height".to_string()))?
+            .parse()?;
+
+        let mut textures = Vec::new();
+        fields.iter()
+            .filter(|(k, _)| k.starts_with("texture"))
+            .for_each(|(_, v)| textures.push(v.to_string()));
+
+        Ok(Request { model, textures, width, height })
+    }
 }
 
 #[derive(Serialize)]
@@ -41,7 +91,7 @@ async fn main() {
 
     loop {
         let (request, response_tx) = request_rx.recv().await.unwrap();
-        let pixels = rs3d::render::render(
+        let pixels = rs3d::render::render_urls(
             request.model,
             request.textures,
             &context,
@@ -56,32 +106,15 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
     let semaphore = Arc::new(Semaphore::new(1));
     let semaphore_clone = semaphore.clone();
     let request_tx_clone = request_tx.clone();
-    let options = warp::multipart::form();
-    let options = options.max_length(Some(1024 * 1024 * 1024));
     let render_form = warp::post()
         .and(warp::path("render-form"))
-        .and(options)
-        .and(warp::body::content_length_limit(u64::MAX))
+        .and(warp::multipart::form().max_length(Some(1024 * 1024 * 1024)))
         .and(warp::any().map(move || semaphore_clone.clone()))
         .and(warp::any().map(move || request_tx_clone.clone()))
         .and_then(|form: FormData, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>|
             async move {
-                let fields: Vec<_> = form.and_then(|mut field| async move {
-                    let mut bytes: Vec<u8> = Vec::new();
-                    while let Some(content) = field.data().await {
-                        let content = content.unwrap();
-                        bytes.put(content);
-                    }
-                    Ok((
-                        field.name().to_string(),
-                        field.filename().unwrap_or("no name given").to_string(),
-                        // String::from_utf8_lossy(&*bytes).to_string(),
-                    ))
-                })
-                    .try_collect()
-                    .await
-                    .unwrap();
-                Ok::<_, warp::Rejection>(format!("{:?}", fields))
+                let r = Request::from_form_data(form).await.unwrap();
+                Ok::<_, warp::Rejection>(format!("{:?}", r))
             });
 
     let render = warp::post()

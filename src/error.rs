@@ -17,3 +17,9 @@ pub enum Error {
     #[error("No mesh")]
     NoMesh,
 }
+
+#[derive(Debug, Error)]
+pub enum ServerError {
+    #[error("Error while parsing form data: {0}")]
+    MissingField(String),
+}
