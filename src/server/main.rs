@@ -2,11 +2,14 @@ use std::io::Write;
 use std::sync::Arc;
 
 use anyhow::Result;
+use bytes::BufMut;
 use env_logger::Target;
+use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
 use three_d::HeadlessContext;
 use tokio::sync::{mpsc, oneshot, Semaphore};
 use warp::Filter;
+use warp::multipart::FormData;
 use warp::reply::Response;
 
 use rs3d::render::RawPixels;
@@ -51,6 +54,36 @@ async fn main() {
 
 async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>) {
     let semaphore = Arc::new(Semaphore::new(1));
+    let semaphore_clone = semaphore.clone();
+    let request_tx_clone = request_tx.clone();
+    let options = warp::multipart::form();
+    let options = options.max_length(Some(1024 * 1024 * 1024));
+    let render_form = warp::post()
+        .and(warp::path("render-form"))
+        .and(options)
+        .and(warp::body::content_length_limit(u64::MAX))
+        .and(warp::any().map(move || semaphore_clone.clone()))
+        .and(warp::any().map(move || request_tx_clone.clone()))
+        .and_then(|form: FormData, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>|
+            async move {
+                let fields: Vec<_> = form.and_then(|mut field| async move {
+                    let mut bytes: Vec<u8> = Vec::new();
+                    while let Some(content) = field.data().await {
+                        let content = content.unwrap();
+                        bytes.put(content);
+                    }
+                    Ok((
+                        field.name().to_string(),
+                        field.filename().unwrap_or("no name given").to_string(),
+                        // String::from_utf8_lossy(&*bytes).to_string(),
+                    ))
+                })
+                    .try_collect()
+                    .await
+                    .unwrap();
+                Ok::<_, warp::Rejection>(format!("{:?}", fields))
+            });
+
     let render = warp::post()
         .and(warp::path("render"))
         .and(warp::body::json())
@@ -93,7 +126,7 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
         .and(warp::path("health"))
         .map(|| "ok");
 
-    let routes = render.or(health);
+    let routes = render.or(health).or(render_form);
 
     warp::serve(routes)
         .run(([0, 0, 0, 0], 3030))
@@ -102,7 +135,7 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
 
 fn init_logger() {
     env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
+        .filter_level(log::LevelFilter::Debug)
         .target(Target::Stdout)
         .format(|buf, record| {
             let entry = LogEntry {

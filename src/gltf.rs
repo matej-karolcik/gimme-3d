@@ -148,7 +148,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_camera() -> Result<()> {
+    fn camera() -> Result<()> {
         let gltf = load_test_model("testdata/iphone.gltf")?;
         let doc = gltf.document;
         let scene = doc.default_scene().ok_or(anyhow!("no default scene"))?;
@@ -159,7 +159,7 @@ mod tests {
     }
 
     #[test]
-    fn test_light() -> Result<()> {
+    fn light() -> Result<()> {
         let gltf = load_test_model("testdata/duvet-cover.gltf")?;
         let doc = gltf.document;
         let scene = doc.default_scene().ok_or(anyhow!("no default scene"))?;
@@ -169,7 +169,7 @@ mod tests {
     }
 
     #[test]
-    fn test_meshes() -> Result<()> {
+    fn meshes() -> Result<()> {
         let gltf = load_test_model("testdata/duvet-cover.gltf")?;
         let doc = gltf.document;
         let scene = doc.default_scene().ok_or(anyhow!("no default scene"))?;
