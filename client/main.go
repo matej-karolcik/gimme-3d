@@ -36,14 +36,17 @@ func run() error {
 	pool, err := ants.NewPoolWithFunc(*conc, func(payload interface{}) {
 		defer wg.Done()
 		start := time.Now()
+
 		req, err := createRequest(endpointUrl, modelUrl, "../testdata/image.jpg")
 		if err != nil {
 			panic(err)
 		}
+
 		_, err = client.Do(req)
 		if err != nil {
 			panic(err)
 		}
+
 		lock.Lock()
 		defer lock.Unlock()
 		fmt.Printf("roundtrip time: %s\n", time.Since(start))
@@ -67,23 +70,26 @@ func run() error {
 }
 
 func createRequest(endpointUrl, modelUrl, imagePath string) (*http.Request, error) {
+	buf := new(bytes.Buffer)
+	writer := multipart.NewWriter(buf)
+
+	if err := addField(writer, "model", modelUrl); err != nil {
+		return nil, fmt.Errorf("adding model field: %w", err)
+	}
+	if err := addField(writer, "width", "2000"); err != nil {
+		return nil, fmt.Errorf("adding width field: %w", err)
+	}
+	if err := addField(writer, "height", "2000"); err != nil {
+		return nil, fmt.Errorf("adding height field: %w", err)
+	}
+
 	f, err := os.Open(imagePath)
 	if err != nil {
 		return nil, fmt.Errorf("reading canvas file: %w", err)
 	}
-
-	buf := new(bytes.Buffer)
-	writer := multipart.NewWriter(buf)
-
-	if err = addField(writer, "model", modelUrl); err != nil {
-		return nil, fmt.Errorf("adding model field: %w", err)
-	}
-	if err = addField(writer, "width", "2000"); err != nil {
-		return nil, fmt.Errorf("adding width field: %w", err)
-	}
-	if err = addField(writer, "height", "2000"); err != nil {
-		return nil, fmt.Errorf("adding height field: %w", err)
-	}
+	defer func() {
+		_ = f.Close()
+	}()
 
 	field, err := writer.CreateFormFile("textures[1]", "canvas.jpg")
 	if err != nil {
