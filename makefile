@@ -16,4 +16,7 @@ linux-bash:
 	docker run -it --rm -v $(PWD):/app -w /app rust:1.75.0-bookworm bash
 
 request:
-	curl -X POST -H "Content-Type: application/json" -d @request.json http://localhost:3030/render
+	curl -X POST \
+	-H "Content-Type: application/json" \
+	-d @request.json http://localhost:3030/render \
+	-o output.png

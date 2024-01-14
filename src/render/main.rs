@@ -10,8 +10,8 @@ async fn main() {
     // run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
     // run("glb/1_p1_t-shirt.glb", &context).await;
     // run("glb/PhoneCase_IPhone12.glb", &context).await;
-    run("output/PhoneCase_IPhone12_out/PhoneCase_IPhone12.gltf", &context).await;
-    return;
+    // run("output/PhoneCase_IPhone12_out/PhoneCase_IPhone12.gltf", &context).await;
+    // return;
 
 
     let dirs = std::fs::read_dir("glb").unwrap();
@@ -40,6 +40,7 @@ async fn run(model_path: &str, context: &HeadlessContext) {
         &context,
         width,
         height,
+        &String::new(),
     ).await;
 
     if maybe_pixels.is_err() {

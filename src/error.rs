@@ -16,6 +16,9 @@ pub enum Error {
 
     #[error("No mesh")]
     NoMesh,
+
+    #[error("No local model found at: {0}")]
+    NoLocalModel(String),
 }
 
 #[derive(Debug, Error)]

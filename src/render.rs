@@ -1,10 +1,12 @@
 use std::f32::consts::FRAC_1_SQRT_2;
+use std::path::Path;
 
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
+use log::info;
 use nalgebra::Quaternion;
 use three_d::{Attenuation, Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, PointLight, RenderTarget, Texture2D, Texture2DRef, vec3};
 use three_d_asset::{Interpolation, radians, Srgba, TextureData, Viewport, Wrapping};
-use three_d_asset::io::Serialize;
+use three_d_asset::io::{Deserialize, RawAssets, Serialize};
 
 use crate::error::Error;
 use crate::object::{Light, LightKind, Transform};
@@ -17,19 +19,27 @@ pub async fn render_urls(
     context: &three_d::Context,
     width: u32,
     height: u32,
+    local_model_dir: &String,
 ) -> Result<RawPixels> {
     let start = std::time::Instant::now();
 
     let mut to_load = textures.clone();
-    to_load.push(model_path.clone());
+
+    if let Ok(local_model_path) = get_local_model(local_model_dir, &model_path.clone()) {
+        to_load.push(local_model_path);
+    } else {
+        to_load.push(model_path.clone());
+    }
+
     let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
     let mut loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
 
-    log::debug!("Time load: {:?}", std::time::Instant::now() - start);
+    info!("Model load: {:?}", std::time::Instant::now() - start);
 
-    let model_slice = loaded_assets.get(model_path.clone()).map_err(|e| Error::AssetLoadingError(e))?;
+    let model_slice = Vec::from(loaded_assets.get(model_path.clone().as_str())
+        .map_err(|e| Error::AssetLoadingError(e))?);
 
-    let gltf = gltf::Gltf::from_slice(model_slice).map_err(|e| Error::GltfParsingError(e))?;
+    let gltf = gltf::Gltf::from_slice(model_slice.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
     let model = loaded_assets.deserialize(model_path.clone().as_str()).context("loading model")?;
@@ -44,6 +54,8 @@ pub async fn render_urls(
             cpu_texture
         })
         .collect();
+
+    info!("Textures load: {:?}", std::time::Instant::now() - start);
 
     render(
         &context,
@@ -57,37 +69,58 @@ pub async fn render_urls(
 
 pub async fn render_raw_images(
     model_path: String,
-    textures: Vec<String>,
+    raw_textures: Vec<Vec<u8>>,
     context: &three_d::Context,
     width: u32,
     height: u32,
+    local_model_path: &String,
 ) -> Result<RawPixels> {
     let start = std::time::Instant::now();
 
-    let mut to_load = textures.clone();
-    to_load.push(model_path.clone());
-    let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
-    let mut loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
+    let mut raw_assets = RawAssets::new();
+    raw_textures.iter()
+        .enumerate()
+        .for_each(|(i, raw_texture)| {
+            raw_assets.insert(i.to_string(), raw_texture.clone());
+        });
 
-    log::debug!("Time load: {:?}", std::time::Instant::now() - start);
-
-    let model_slice = loaded_assets.get(model_path.clone()).map_err(|e| Error::AssetLoadingError(e))?;
-
-    let gltf = gltf::Gltf::from_slice(model_slice).map_err(|e| Error::GltfParsingError(e))?;
-    let doc = gltf.document;
-
-    let model = loaded_assets.deserialize(model_path.clone().as_str()).context("loading model")?;
-
-    let cpu_textures: Vec<CpuTexture> = textures.iter()
-        .map(|texture_path| {
-            let mut cpu_texture: CpuTexture = loaded_assets
-                .deserialize(texture_path)
-                .context("loading texture")
-                .unwrap();
+    let cpu_textures = raw_textures.iter()
+        .enumerate()
+        .map(|(i, foobar)| {
+            let mut cpu_texture = three_d_asset::texture::Texture2D::deserialize(
+                i.to_string(),
+                &mut raw_assets,
+            ).unwrap();
             cpu_texture.data.to_linear_srgb();
             cpu_texture
         })
         .collect();
+
+    info!("Textures load: {:?}", std::time::Instant::now() - start);
+    let start = std::time::Instant::now();
+
+    let mut final_model_path = model_path.clone();
+    let mut loaded_assets;
+
+    if let Ok(model_path) = get_local_model(local_model_path, &model_path.clone()) {
+        loaded_assets = three_d_asset::io::load(&[model_path.clone()]).unwrap();
+        final_model_path = model_path.clone();
+    } else {
+        let to_load = vec![model_path.clone()];
+        let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
+
+        loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
+    }
+
+    let model_slice = Vec::from(loaded_assets.get(final_model_path.clone())
+        .map_err(|e| Error::AssetLoadingError(e))?);
+
+    let gltf = gltf::Gltf::from_slice(model_slice.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
+    let doc = gltf.document;
+
+    let model = loaded_assets.deserialize(final_model_path.as_str()).context("loading model")?;
+
+    info!("Model load: {:?}", std::time::Instant::now() - start);
 
     render(
         &context,
@@ -99,6 +132,28 @@ pub async fn render_raw_images(
     )
 }
 
+fn get_local_model(local_dir: &String, path: &String) -> Result<String> {
+    if local_dir.is_empty() || path.is_empty() {
+        return Err(anyhow!("local directory or path is empty"));
+    }
+
+    let local_dir = Path::new(local_dir.as_str());
+    let model_path = Path::new(path.as_str());
+    let filename = model_path.file_name();
+
+    if let None = filename {
+        return Err(anyhow!("no filename found in {}", path));
+    }
+
+    let model_path = local_dir.join(filename.unwrap());
+
+    if !model_path.exists() {
+        return Err(Error::NoLocalModel(model_path.display().to_string()).into());
+    }
+
+
+    Ok(String::from(model_path.to_str().unwrap()))
+}
 
 fn render(
     context: &three_d::Context,
@@ -110,8 +165,6 @@ fn render(
 ) -> Result<RawPixels> {
     let start = std::time::Instant::now();
 
-    log::debug!("Time load: {:?}", std::time::Instant::now() - start);
-
     let scene = doc.default_scene().ok_or(Error::NoDefaultScene)?;
     let camera_props = crate::gltf::extract(&scene, crate::gltf::get_camera).ok_or(Error::NoCamera)?;
     let mesh_props = crate::gltf::extract_all(&scene, crate::gltf::get_mesh);
@@ -120,8 +173,6 @@ fn render(
     if mesh_props.is_empty() {
         return Err(Error::NoMesh.into());
     }
-
-    log::debug!("Time parse: {:?}", std::time::Instant::now() - start);
 
     let mut mesh = Model::<ColorMaterial>::new(&context, &model).context("creating mesh")?;
     let num_textures = cpu_textures.len();
@@ -211,7 +262,7 @@ fn render(
         .remove("result.png")
         .unwrap();
 
-    log::debug!("Time render: {:?}", std::time::Instant::now() - start);
+    info!("Time render: {:?}", std::time::Instant::now() - start);
 
     Ok(result)
 }

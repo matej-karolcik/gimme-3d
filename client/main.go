@@ -64,12 +64,15 @@ func run() error {
 		return fmt.Errorf("making request: %w", err)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	f, err = os.Create("output.png")
 	if err != nil {
-		return fmt.Errorf("reading response body: %w", err)
+		return fmt.Errorf("creating output file: %w", err)
 	}
 
-	fmt.Printf("resp: %s\n", string(b))
+	if _, err = io.Copy(f, resp.Body); err != nil {
+		return fmt.Errorf("writing output file: %w", err)
+	}
+
 	return nil
 }
 

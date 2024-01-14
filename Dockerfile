@@ -35,4 +35,7 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=builder /tmp/server /app/server
 
+# todo remove this
+COPY glb glb
+
 ENTRYPOINT ["xvfb-run", "-a", "/app/server"]
