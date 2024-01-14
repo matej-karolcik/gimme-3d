@@ -84,9 +84,8 @@ pub async fn render_raw_images(
             raw_assets.insert(i.to_string(), raw_texture.clone());
         });
 
-    let cpu_textures = raw_textures.iter()
-        .enumerate()
-        .map(|(i, foobar)| {
+    let cpu_textures = (0..raw_textures.len())
+        .map(|i| {
             let mut cpu_texture = three_d_asset::texture::Texture2D::deserialize(
                 i.to_string(),
                 &mut raw_assets,

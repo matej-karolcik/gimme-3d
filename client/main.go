@@ -7,6 +7,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"time"
 )
 
 func main() {
@@ -59,10 +60,13 @@ func run() error {
 
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 
+	start := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("making request: %w", err)
 	}
+
+	fmt.Printf("roundtrip time: %s\n", time.Since(start))
 
 	f, err = os.Create("output.png")
 	if err != nil {
