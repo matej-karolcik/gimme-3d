@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/panjf2000/ants/v2"
 	"io"
+	"mime"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -16,6 +17,7 @@ import (
 var (
 	conc        = flag.Int("conc", 1, "number of concurrent requests")
 	numRequests = flag.Int("n", 1, "number of requests")
+	webp        = flag.Bool("webp", false, "use webp as output format")
 )
 
 func main() {
@@ -109,6 +111,10 @@ func createRequest(endpointUrl, modelUrl, imagePath string) (*http.Request, erro
 	}
 
 	req.Header.Add("Content-Type", writer.FormDataContentType())
+
+	if *webp {
+		req.Header.Add("Accept", mime.TypeByExtension(".webp"))
+	}
 
 	return req, nil
 }

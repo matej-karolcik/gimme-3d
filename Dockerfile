@@ -34,6 +34,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /tmp/server /app/server
+COPY config.toml /app/config.toml
+
+WORKDIR /app
 
 # todo remove this
 COPY glb glb

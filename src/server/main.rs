@@ -1,104 +1,28 @@
-use std::collections::HashMap;
-use std::fmt;
-use std::fmt::Formatter;
-use std::io::Write;
 use std::sync::Arc;
 
 use anyhow::Result;
-use bytes::BufMut;
-use env_logger::Target;
-use futures_util::TryStreamExt;
-use serde::{Deserialize, Serialize};
 use three_d::HeadlessContext;
 use tokio::sync::{mpsc, oneshot, Semaphore};
 use warp::Filter;
 use warp::multipart::FormData;
 use warp::reply::Response;
 
-use rs3d::error::ServerError;
 use rs3d::render::RawPixels;
 
-#[derive(Deserialize, Serialize)]
-struct Request {
-    model: String,
-    texture_urls: Option<Vec<String>>,
-    textures: Option<Vec<Vec<u8>>>,
-    width: u32,
-    height: u32,
-}
-
-impl fmt::Debug for Request {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Request")
-            .field("model", &self.model)
-            .field("textures (length)", &self.textures.is_some())
-            .field("texture_urls (length)", &self.texture_urls.is_some())
-            .field("width", &self.width)
-            .field("height", &self.height)
-            .finish()
-    }
-}
-
-impl Request {
-    fn has_raw_textures(&self) -> bool {
-        self.textures.is_some()
-    }
-
-    async fn from_form_data(form: FormData) -> Result<Self> {
-        let fields: HashMap<String, Vec<u8>> = form.and_then(|mut field| async move {
-            let mut bytes: Vec<u8> = Vec::new();
-            while let Some(content) = field.data().await {
-                let content = content?;
-                bytes.put(content);
-            }
-
-            Ok((field.name().to_string(), bytes))
-        })
-            .try_collect()
-            .await?;
-
-        let model = String::from_utf8(fields.get("model")
-            .ok_or(ServerError::MissingField("model".to_string()))?.to_vec())?;
-        let width = String::from_utf8(fields.get("width")
-            .ok_or(ServerError::MissingField("width".to_string()))?.to_vec())?
-            .parse()?;
-        let height = String::from_utf8(fields.get("height")
-            .ok_or(ServerError::MissingField("height".to_string()))?.to_vec())?
-            .parse()?;
-
-        let mut textures = Vec::new();
-        fields.iter()
-            .filter(|(k, _)| k.starts_with("texture"))
-            .for_each(|(_, v)| textures.push(v.to_vec()));
-
-        Ok(Request {
-            model,
-            texture_urls: None,
-            textures: Some(textures),
-            width,
-            height,
-        })
-    }
-}
-
-#[derive(Serialize)]
-struct LogEntry {
-    level: String,
-    target: String,
-    message: String,
-}
+mod config;
+mod request;
+mod logger;
 
 #[tokio::main]
 async fn main() {
-    init_logger();
+    logger::init();
 
-    // todo replace this with .env
-    std::env::set_var("LOCAL_MODEL_DIR", "glb");
-    let local_model_dir = get_local_model_dir();
+    let config = config::Config::parse_toml("config.toml".to_string()).unwrap();
+    let local_model_dir = config.models.local_model_dir;
 
     let context = HeadlessContext::new().unwrap();
 
-    let (request_tx, mut request_rx) = mpsc::channel::<(Request, oneshot::Sender<Result<RawPixels>>)>(10);
+    let (request_tx, mut request_rx) = mpsc::channel::<(request::Request, oneshot::Sender<Result<RawPixels>>)>(10);
 
     tokio::spawn(async move { serve(request_tx).await; });
 
@@ -116,6 +40,7 @@ async fn main() {
             let _ = response_tx.send(pixels);
             continue;
         }
+
         let pixels = rs3d::render::render_urls(
             request.model,
             request.texture_urls.unwrap_or_default(),
@@ -128,8 +53,7 @@ async fn main() {
     }
 }
 
-
-async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>) {
+async fn serve(request_tx: mpsc::Sender<(request::Request, oneshot::Sender<Result<RawPixels>>)>) {
     let semaphore = Arc::new(Semaphore::new(1));
     let semaphore_clone = semaphore.clone();
     let request_tx_clone = request_tx.clone();
@@ -139,11 +63,11 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
         .and(warp::header::optional("accept"))
         .and(warp::any().map(move || semaphore_clone.clone()))
         .and(warp::any().map(move || request_tx_clone.clone()))
-        .and_then(|form: FormData, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>|
+        .and_then(|form: FormData, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, oneshot::Sender<Result<RawPixels>>)>|
             async move {
                 let start = std::time::Instant::now();
 
-                let r = Request::from_form_data(form).await.unwrap();
+                let r = request::Request::from_form_data(form).await.unwrap();
                 let permit = sem.acquire_owned().await.unwrap();
 
                 let (response_tx, response_rx) = oneshot::channel();
@@ -154,7 +78,7 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
 
                 log::info!("Time overall: {:?}", start.elapsed());
 
-                respond(accept_header, pixels)
+                respond(accept_header, pixels, start)
             });
 
     let render = warp::post()
@@ -163,8 +87,9 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
         .and(warp::header::optional("accept"))
         .and(warp::any().map(move || semaphore.clone()))
         .and(warp::any().map(move || request_tx.clone()))
-        .and_then(move |r: Request, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixels>>)>| {
+        .and_then(move |r: request::Request, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, oneshot::Sender<Result<RawPixels>>)>| {
             async move {
+                let start = std::time::Instant::now();
                 let permit = sem.acquire_owned().await.unwrap();
 
                 let (response_tx, response_rx) = oneshot::channel();
@@ -173,7 +98,7 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
 
                 drop(permit);
 
-                respond(accept_header, pixels)
+                respond(accept_header, pixels, start)
             }
         });
 
@@ -188,35 +113,17 @@ async fn serve(request_tx: mpsc::Sender<(Request, oneshot::Sender<Result<RawPixe
         .await;
 }
 
-fn init_logger() {
-    env_logger::builder()
-        .filter_level(log::LevelFilter::Info)
-        .target(Target::Stdout)
-        .format(|buf, record| {
-            let entry = LogEntry {
-                level: record.level().to_string(),
-                target: record.target().to_string(),
-                message: format!("{}", record.args()),
-            };
-            let content = serde_json::to_string(&entry).unwrap();
-            writeln!(buf, "{}", content)
-        })
-        .init();
-}
-
-fn get_local_model_dir() -> String {
-    std::env::var("LOCAL_MODEL_DIR")
-        .unwrap_or_else(|_| String::new())
-}
-
-fn respond(accept_header: Option<String>, pixels: RawPixels) -> Result<Response, warp::Rejection> {
+fn respond(accept_header: Option<String>, pixels: RawPixels, start: std::time::Instant) -> Result<Response, warp::Rejection> {
     if let Some(mime) = accept_header {
         if mime.contains("image/webp") {
             let start = std::time::Instant::now();
             let img = image::load_from_memory(&pixels).unwrap();
             let mut writer = std::io::Cursor::new(Vec::new());
             img.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
+
             log::info!("Time webp: {:?}", start.elapsed());
+            log::info!("Time overall: {:?}", start.elapsed());
+
 
             return Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
                 .header("Content-Type", "image/webp")
@@ -224,6 +131,8 @@ fn respond(accept_header: Option<String>, pixels: RawPixels) -> Result<Response,
                 .unwrap());
         }
     }
+
+    log::info!("Time overall: {:?}", start.elapsed());
 
     Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
         .header("Content-Type", "image/png")

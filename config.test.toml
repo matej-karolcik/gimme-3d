@@ -1,0 +1,9 @@
+port = 3030
+
+[models]
+models_base_url = 's3://jq-staging-matko/gltf/'
+local_model_dir = '/var/models/'
+models = [
+    'foo.glb',
+    'bar.glb',
+]
