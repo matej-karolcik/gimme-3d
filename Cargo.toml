@@ -19,7 +19,7 @@ path = "src/server/main.rs"
 
 [[bin]]
 name = "cmd"
-path = "src/cmd/main.rs"
+path = "src/main.rs"
 
 
 [dependencies]

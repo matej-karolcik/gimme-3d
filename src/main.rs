@@ -1,12 +1,9 @@
 use clap::{Arg, Command};
 
+use rs3d::server;
+
 #[tokio::main]
 async fn main() {
-    env_logger::Builder::new()
-        .filter_level(log::LevelFilter::Info)
-        .target(env_logger::Target::Stdout)
-        .init();
-
     let matches = Command::new("preview")
         .subcommand(
             Command::new("collect-models")
@@ -30,11 +27,17 @@ async fn main() {
 
     match matches.subcommand() {
         Some(("collect-models", submatches)) => {
+            env_logger::Builder::new()
+                .filter_level(log::LevelFilter::Info)
+                .target(env_logger::Target::Stdout)
+                .init();
+
             let input_dir = submatches.get_one::<String>("input-dir").unwrap();
             collect_models(input_dir);
         }
         Some(("serve", submatches)) => {
-            let port = submatches.get_one::<u16>("port").unwrap();
+            let port = submatches.get_one::<u16>("port").unwrap_or_else(|| &3030);
+            server::server::run(*port).await;
         }
         Some((&_, _)) => {}
         None => {}

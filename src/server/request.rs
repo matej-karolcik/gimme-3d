@@ -5,9 +5,8 @@ use std::fmt::Formatter;
 use bytes::BufMut;
 use futures_util::TryStreamExt;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 use warp::multipart::FormData;
-
-use rs3d::error::ServerError;
 
 #[derive(Deserialize, Serialize)]
 pub struct Request {
@@ -49,12 +48,12 @@ impl Request {
             .await?;
 
         let model = String::from_utf8(fields.get("model")
-            .ok_or(ServerError::MissingField("model".to_string()))?.to_vec())?;
+            .ok_or(ClientError::MissingField("model".to_string()))?.to_vec())?;
         let width = String::from_utf8(fields.get("width")
-            .ok_or(ServerError::MissingField("width".to_string()))?.to_vec())?
+            .ok_or(ClientError::MissingField("width".to_string()))?.to_vec())?
             .parse()?;
         let height = String::from_utf8(fields.get("height")
-            .ok_or(ServerError::MissingField("height".to_string()))?.to_vec())?
+            .ok_or(ClientError::MissingField("height".to_string()))?.to_vec())?
             .parse()?;
 
         let mut textures = Vec::new();
@@ -70,4 +69,10 @@ impl Request {
             height,
         })
     }
+}
+
+#[derive(Debug, Error)]
+pub enum ClientError {
+    #[error("Error while parsing form data: {0}")]
+    MissingField(String),
 }
