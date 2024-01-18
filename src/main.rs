@@ -1,9 +1,22 @@
 use clap::{Arg, Command};
 
-use rs3d::{download, fbx2gltf, server};
+use rs3d::{download, fbx2gltf, server, Subcommand};
 
 #[tokio::main]
 async fn main() {
+    let mut root = Command::new("preview");
+
+    let mut components: Vec<Box<dyn Subcommand>> = vec![
+
+    ];
+    components.push(Box::new(download::Download {}));
+    components.push(Box::new(fbx2gltf::Fbx2Gltf {}));
+
+    for component in components {
+        let subcmd = component.get_subcommand();
+        root = root.subcommand(component.get_subcommand());
+    }
+
     let matches = Command::new("preview")
         .subcommand(
             Command::new("collect-models")
@@ -19,7 +32,6 @@ async fn main() {
                         .value_parser(clap::value_parser!(u16).range(3000..))
                 )
         )
-        .subcommand(fbx2gltf::get_subcommand())
         .subcommand(
             Command::new("download")
                 .arg(
@@ -42,9 +54,6 @@ async fn main() {
         Some(("serve", submatches)) => {
             let port = submatches.get_one::<u16>("port").unwrap_or_else(|| &3030);
             server::run(*port).await;
-        }
-        Some(("convert", submatches)) => {
-            fbx2gltf::convert(submatches).unwrap();
         }
         Some(("download", submatches)) => {
             let config_path = submatches.get_one::<String>("config").unwrap();

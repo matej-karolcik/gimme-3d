@@ -2,41 +2,54 @@ use std::path::Path;
 use std::process::ExitStatus;
 
 use anyhow::{anyhow, Context};
-use clap::{Arg, Command};
+use async_trait::async_trait;
+use clap::{Arg, ArgMatches, Command};
 use clap::ArgAction::SetTrue;
 
-pub fn get_subcommand() -> Command {
-    Command::new("convert")
-        .arg(
-            Arg::new("input")
-                .short('i')
-                .long("input")
-                .required(true)
-                .help("input file or directory"),
-        )
-        .arg(
-            Arg::new("output")
-                .short('o')
-                .long("output")
-                .required(false)
-                .default_value("output")
-                .help("output directory"),
-        )
-        .arg(
-            Arg::new("binary")
-                .short('b')
-                .long("binary")
-                .required(false)
-                .action(SetTrue)
-                .help("output binary gltf"),
-        )
+pub struct Fbx2Gltf {}
+
+#[async_trait]
+impl crate::Subcommand for Fbx2Gltf {
+    fn get_subcommand(&self) -> Command {
+        Command::new("convert")
+            .arg(
+                Arg::new("input")
+                    .short('i')
+                    .long("input")
+                    .required(true)
+                    .help("input file or directory"),
+            )
+            .arg(
+                Arg::new("output")
+                    .short('o')
+                    .long("output")
+                    .required(false)
+                    .default_value("output")
+                    .help("output directory"),
+            )
+            .arg(
+                Arg::new("binary")
+                    .short('b')
+                    .long("binary")
+                    .required(false)
+                    .action(SetTrue)
+                    .help("output binary gltf"),
+            )
+    }
+
+    async fn run(&self, matches: &ArgMatches) -> anyhow::Result<()> {
+        let input = matches.get_one::<String>("input").unwrap();
+        let output = matches.get_one::<String>("output").unwrap();
+        let binary = matches.get_flag("binary");
+
+        async {
+            convert(&input, &output, binary)
+        }.await
+    }
 }
 
-pub fn convert(matches: &clap::ArgMatches) -> anyhow::Result<()> {
-    let input = matches.get_one::<String>("input").unwrap();
-    let output = matches.get_one::<String>("output").unwrap();
-    let binary = matches.get_flag("binary");
 
+pub fn convert(input: &String, output: &String, binary: bool) -> anyhow::Result<()> {
     let input_path = Path::new(input);
     if !input_path.exists() {
         return Err(anyhow!("input {} does not exist", input));

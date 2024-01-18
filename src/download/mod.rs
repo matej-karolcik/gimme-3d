@@ -2,8 +2,35 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
+use async_trait::async_trait;
+use clap::{Arg, ArgMatches, Command};
 use futures_util::{stream, StreamExt};
 use url::Url;
+
+use crate::server;
+
+pub struct Download {}
+
+#[async_trait]
+impl crate::Subcommand for Download {
+    fn get_subcommand(&self) -> Command {
+        Command::new("download")
+            .arg(
+                Arg::new("config")
+                    .required(true)
+            )
+    }
+
+    async fn run(&self, matches: &ArgMatches) -> Result<()> {
+        let config_path = matches.get_one::<String>("config").unwrap();
+        let config = server::config::Config::parse_toml(config_path.to_string()).unwrap();
+        models(
+            config.models.models_base_url,
+            config.models.models,
+            config.models.local_model_dir,
+        ).await
+    }
+}
 
 pub async fn models(
     base_url: String,
