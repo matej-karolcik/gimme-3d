@@ -2,6 +2,7 @@
 /assets/fbx/*
 /output/*
 /glb/*
+/models/*
 /results/*
 
 results.bin

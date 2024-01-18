@@ -6,12 +6,8 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [[bin]]
-name = "fbx2gltf"
-path = "src/fbx2gltf/main.rs"
-
-[[bin]]
 name = "render"
-path = "src/render/main.rs"
+path = "src/render_file/main.rs"
 
 [[bin]]
 name = "server"
@@ -41,3 +37,5 @@ thiserror = "1.0.56"
 futures-util = "0.3.30"
 bytes = "1.5.0"
 toml = "0.8.8"
+reqwest = "0.11.23"
+url = "2.5.0"

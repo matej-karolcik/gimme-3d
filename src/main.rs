@@ -1,6 +1,6 @@
 use clap::{Arg, Command};
 
-use rs3d::server;
+use rs3d::{download, fbx2gltf, server};
 
 #[tokio::main]
 async fn main() {
@@ -19,10 +19,14 @@ async fn main() {
                         .value_parser(clap::value_parser!(u16).range(3000..))
                 )
         )
-        // .subcommand(
-        //     Command::new("download-models")
-        //         .arg(Arg::new("base-url"))
-        // )
+        .subcommand(fbx2gltf::get_subcommand())
+        .subcommand(
+            Command::new("download")
+                .arg(
+                    Arg::new("config")
+                        .required(true)
+                )
+        )
         .get_matches();
 
     match matches.subcommand() {
@@ -37,7 +41,19 @@ async fn main() {
         }
         Some(("serve", submatches)) => {
             let port = submatches.get_one::<u16>("port").unwrap_or_else(|| &3030);
-            server::server::run(*port).await;
+            server::run(*port).await;
+        }
+        Some(("convert", submatches)) => {
+            fbx2gltf::convert(submatches).unwrap();
+        }
+        Some(("download", submatches)) => {
+            let config_path = submatches.get_one::<String>("config").unwrap();
+            let config = server::config::Config::parse_toml(config_path.to_string()).unwrap();
+            download::models(
+                config.models.models_base_url,
+                config.models.models,
+                config.models.local_model_dir,
+            ).await.unwrap();
         }
         Some((&_, _)) => {}
         None => {}

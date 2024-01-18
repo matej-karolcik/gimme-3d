@@ -1,9 +1,10 @@
 port = 3030
 
 [models]
-models_base_url = 's3://jq-staging-matko/gltf/'
-local_model_dir = '/var/models/'
+# the trailing slash is important
+models_base_url = 'https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/'
+local_model_dir = 'models'
 models = [
-    'foo.glb',
-    'bar.glb',
+    '0_p1_blanket-fleece_ 1000x1000.glb',
+    '0_p3_bath-towel.glb',
 ]

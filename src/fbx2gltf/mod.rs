@@ -1,12 +1,12 @@
 use std::path::Path;
 use std::process::ExitStatus;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{anyhow, Context};
 use clap::{Arg, Command};
 use clap::ArgAction::SetTrue;
 
-fn main() -> Result<()> {
-    let m = Command::new("fbx2gltf")
+pub fn get_subcommand() -> Command {
+    Command::new("convert")
         .arg(
             Arg::new("input")
                 .short('i')
@@ -29,9 +29,10 @@ fn main() -> Result<()> {
                 .required(false)
                 .action(SetTrue)
                 .help("output binary gltf"),
-        );
+        )
+}
 
-    let matches = m.get_matches();
+pub fn convert(matches: &clap::ArgMatches) -> anyhow::Result<()> {
     let input = matches.get_one::<String>("input").unwrap();
     let output = matches.get_one::<String>("output").unwrap();
     let binary = matches.get_flag("binary");
@@ -69,7 +70,9 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn convert_file(input_path: &Path, output_path: Option<&Path>, binary_output: bool) -> Result<ExitStatus> {
+fn convert_file(input_path: &Path, output_path: Option<&Path>, binary_output: bool) -> anyhow::Result<ExitStatus> {
+    // todo use std::process::Command::new("fbx2gltf-bin") when it is available
+    // todo prolly using which crate
     let binding = std::process::Command::new("./fbx2gltf-bin");
     let mut cmd = binding;
     cmd.arg(input_path.to_str().unwrap());

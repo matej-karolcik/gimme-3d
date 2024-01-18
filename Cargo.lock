@@ -2229,6 +2229,7 @@ dependencies = [
  "image",
  "log",
  "nalgebra",
+ "reqwest",
  "serde",
  "serde_json",
  "thiserror",
@@ -2236,6 +2237,7 @@ dependencies = [
  "three-d-asset",
  "tokio",
  "toml",
+ "url",
  "warp",
 ]
 

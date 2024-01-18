@@ -1,4 +1,4 @@
-# syntax = docker/dockerfile:1.2
+# syntax = docker/dockerfile:1.6
 
 FROM rust:1.74.1-slim-bookworm AS builder
 
