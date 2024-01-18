@@ -42,9 +42,7 @@ impl crate::Subcommand for Fbx2Gltf {
         let output = matches.get_one::<String>("output").unwrap();
         let binary = matches.get_flag("binary");
 
-        async {
-            convert(&input, &output, binary)
-        }.await
+        async { convert(&input, &output, binary) }.await
     }
 }
 

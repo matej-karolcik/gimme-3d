@@ -9,17 +9,12 @@ impl crate::Subcommand for Collect {
     fn get_subcommand(&self) -> Command {
         Command::new("collect")
             .arg(
-                Arg::new("config")
+                Arg::new("input-dir")
                     .required(true)
             )
     }
 
     async fn run(&self, matches: &ArgMatches) -> Result<()> {
-        env_logger::Builder::new()
-            .filter_level(log::LevelFilter::Info)
-            .target(env_logger::Target::Stdout)
-            .init();
-
         let input_dir = matches.get_one::<String>("input-dir").unwrap();
 
         async {
@@ -57,5 +52,5 @@ fn collect_models(input_dir: &String) {
     let result_path = "models.txt";
     std::fs::write(result_path, models.join("\n")).unwrap();
 
-    log::info!("wrote models to {}", result_path);
+    println!("wrote models to {}", result_path);
 }

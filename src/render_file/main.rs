@@ -18,6 +18,11 @@ async fn main() {
     for dir in dirs {
         let dir = dir.unwrap();
         let path = dir.path();
-        run_multiple(&String::from(path.to_str().unwrap()), &String::from("results"), &context).await;
+
+        run_multiple(
+            &String::from(path.to_str().unwrap()),
+            &String::from("results"),
+            &context,
+        ).await;
     }
 }

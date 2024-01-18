@@ -1,10 +1,10 @@
-use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 use async_trait::async_trait;
 use clap::{Arg, ArgMatches, Command};
 use futures_util::{stream, StreamExt};
+use indicatif::ProgressBar;
 use url::Url;
 
 use crate::server;
@@ -44,26 +44,34 @@ pub async fn models(
         std::fs::create_dir_all(output)?;
     }
 
+    let pb = ProgressBar::new(models.len() as u64);
+
     stream::iter(models)
         .for_each_concurrent(10, |model| {
             let base = base.clone();
             let url = base.join(model.as_str()).unwrap();
             let output = output.join(model.as_str()).to_owned();
-            async move {
+            async {
                 download(url, output).await.unwrap();
+                pb.clone().inc(1);
             }
         })
         .await;
+
+    pb.finish_with_message("done");
 
     Ok(())
 }
 
 async fn download(url: Url, output: PathBuf) -> Result<()> {
-    let mut response = reqwest::get(url).await?;
-    let mut file = std::fs::File::create(output)?;
-    while let Some(chunk) = response.chunk().await? {
-        file.write_all(&chunk)?;
-    }
+    let start = std::time::Instant::now();
+    let response = reqwest::get(url).await?;
+    let mut file = std::fs::File::create(output.clone())?;
+
+    let content = response.text().await?;
+    std::io::copy(&mut content.as_bytes(), &mut file)?;
+
+    println!("downloaded {} in {:?}", output.to_str().unwrap(), start.elapsed());
 
     Ok(())
 }

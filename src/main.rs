@@ -26,7 +26,7 @@ async fn main() {
 
     let mut debug_components: Vec<Box<dyn Subcommand>> = vec![];
 
-    if Ok("release".to_owned()) == std::env::var("PROFILE") {
+    if Ok("release".to_owned()) != std::env::var("PROFILE") {
         debug_components.push(Box::new(collect::Collect {}));
         debug_components.push(Box::new(download::Download {}));
         debug_components.push(Box::new(fbx2gltf::Fbx2Gltf {}));
@@ -36,9 +36,7 @@ async fn main() {
         }
     }
 
-    let matches = root.get_matches();
-
-    match matches.subcommand() {
+    match root.get_matches().subcommand() {
         Some(("serve", submatches)) => {
             let port = submatches.get_one::<u16>("port").unwrap_or_else(|| &3030);
             server::run(*port).await;
