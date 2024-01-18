@@ -9,6 +9,8 @@ pub mod server;
 pub mod render;
 pub mod fbx2gltf;
 pub mod download;
+pub mod collect;
+
 
 #[async_trait]
 pub trait Subcommand {

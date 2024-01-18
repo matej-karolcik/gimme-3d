@@ -1,34 +1,17 @@
 use std::path::Path;
-use clap::Command;
 
 use three_d::*;
 
-
-pub fn get_subcommand() -> Command {
-    Command::new("")
-}
-
-
-async fn main() {
-    let context = HeadlessContext::new().unwrap();
-    let _ = std::fs::create_dir("results");
-
-    // run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    // run("glb/1_p1_t-shirt.glb", &context).await;
-    // run("glb/PhoneCase_IPhone12.glb", &context).await;
-    // run("output/PhoneCase_IPhone12_out/PhoneCase_IPhone12.gltf", &context).await;
-    // return;
-
-
-    let dirs = std::fs::read_dir("glb").unwrap();
-    for dir in dirs {
-        let dir = dir.unwrap();
-        let path = dir.path();
-        run(path.to_str().unwrap(), &context).await;
+pub async fn run_multiple(input: &String, results: &String, context: &HeadlessContext) {
+    let files = std::fs::read_dir(input).unwrap();
+    for file in files {
+        let entry = file.unwrap();
+        let path = entry.path();
+        run(path.to_str().unwrap(), results, &context).await;
     }
 }
 
-async fn run(model_path: &str, context: &HeadlessContext) {
+async fn run(model_path: &str, results_path: &String, context: &HeadlessContext) {
     let start = std::time::Instant::now();
 
     println!("Running: {}", model_path);
@@ -57,7 +40,7 @@ async fn run(model_path: &str, context: &HeadlessContext) {
     let pixels = maybe_pixels.unwrap();
 
     let img = image::load_from_memory(&pixels).unwrap();
-    let mut writer = std::fs::File::create(Path::new("results")
+    let mut writer = std::fs::File::create(Path::new(results_path)
         .join(Path::new(&model_path).file_name().unwrap())
         .with_extension("webp")).unwrap();
 
