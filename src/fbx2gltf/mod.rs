@@ -35,6 +35,7 @@ impl crate::Subcommand for Fbx2Gltf {
                     .action(SetTrue)
                     .help("output binary gltf"),
             )
+            .about("Convert fbx files into glb/gltf")
     }
 
     async fn run(&self, matches: &ArgMatches) -> anyhow::Result<()> {

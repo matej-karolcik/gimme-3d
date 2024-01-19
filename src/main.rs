@@ -7,10 +7,7 @@ async fn main() {
     let mut root = Command::new("preview")
         .subcommand(
             Command::new("serve")
-                .arg(
-                    Arg::new("port")
-                        .value_parser(clap::value_parser!(u16).range(3000..))
-                )
+                .about("Start http server (using config.toml for configuration)")
         )
         .subcommand(
             Command::new("render")
@@ -22,6 +19,7 @@ async fn main() {
                     Arg::new("results")
                         .default_value("results")
                 )
+                .about("Render a single glb/gltf file or directory containing multiple")
         );
 
     let mut debug_components: Vec<Box<dyn Subcommand>> = vec![];
@@ -37,9 +35,8 @@ async fn main() {
     }
 
     match root.get_matches().subcommand() {
-        Some(("serve", submatches)) => {
-            let port = submatches.get_one::<u16>("port").unwrap_or_else(|| &3030);
-            server::run(*port).await;
+        Some(("serve", _)) => {
+            server::run().await;
         }
         Some(("render", submatches)) => {
             let context = three_d::HeadlessContext::new().unwrap();

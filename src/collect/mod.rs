@@ -12,6 +12,7 @@ impl crate::Subcommand for Collect {
                 Arg::new("input-dir")
                     .required(true)
             )
+            .about("Collect model names from a local directory and save them in models.txt (for a later use in config.toml)")
     }
 
     async fn run(&self, matches: &ArgMatches) -> Result<()> {

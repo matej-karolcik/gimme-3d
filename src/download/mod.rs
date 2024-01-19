@@ -19,6 +19,7 @@ impl crate::Subcommand for Download {
                 Arg::new("config")
                     .required(true)
             )
+            .about("Download models from a remote server to a local directory (for caching)")
     }
 
     async fn run(&self, matches: &ArgMatches) -> Result<()> {

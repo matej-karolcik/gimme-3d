@@ -11,7 +11,7 @@ use crate::render::*;
 
 use super::{config, logger, request};
 
-pub async fn run(port: u16) {
+pub async fn run() {
     logger::init();
 
     let config = config::Config::parse_toml("config.toml".to_string()).unwrap();
@@ -21,7 +21,7 @@ pub async fn run(port: u16) {
 
     let (request_tx, mut request_rx) = mpsc::channel::<(request::Request, oneshot::Sender<Result<RawPixels>>)>(10);
 
-    tokio::spawn(async move { serve(port, request_tx).await; });
+    tokio::spawn(async move { serve(config.port, request_tx).await; });
 
     loop {
         let (request, response_tx) = request_rx.recv().await.unwrap();
