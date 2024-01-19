@@ -23,6 +23,7 @@ async fn main() {
             &String::from(path.to_str().unwrap()),
             &String::from("results"),
             &context,
+            &None,
         ).await;
     }
 }

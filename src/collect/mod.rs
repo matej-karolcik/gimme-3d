@@ -11,6 +11,7 @@ impl crate::Subcommand for Collect {
             .arg(
                 Arg::new("input-dir")
                     .required(true)
+                    .long_help("directory where glb models are stored locally")
             )
             .about("Collect model names from a local directory and save them in models.txt (for a later use in config.toml)")
     }

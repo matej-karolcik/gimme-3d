@@ -36,7 +36,7 @@ Any status code other than 200 means the container should receive a backoff or a
 ### POST `/render`
 
 Endpoint for rendering a preview.
-Request is in json format.
+Request is in json format. [Example](request.json)
 
 ```json
 {
@@ -61,6 +61,16 @@ The request is a post form, with following fields:
 - `model` url of model to be used, the basename of the model will be used to look for a local file
 - `textures` an array of textures in binary format, these will be applied to meshes
   in the same order as given here (`textures[0]`, `textures[1]`, ...)
+
+# Configuration
+
+Some features can be configured using the `config.toml` file.
+
+- `port` local port for http server
+- `models_base_url` the base url for downloading models
+- `local_model_dir` local directory for where model files will be stored
+- `models` a list of strings representing model filenames
+  that will be appended to `models_base_url`
 
 # Caveats
 

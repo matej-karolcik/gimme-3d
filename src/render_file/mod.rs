@@ -2,16 +2,26 @@ use std::path::Path;
 
 use three_d::*;
 
-pub async fn run_multiple(input: &String, results: &String, context: &HeadlessContext) {
+pub async fn run_multiple(
+    input: &String,
+    results: &String,
+    context: &HeadlessContext,
+    texture_url: &Option<&String>,
+) {
     let files = std::fs::read_dir(input).unwrap();
     for file in files {
         let entry = file.unwrap();
         let path = entry.path();
-        run(path.to_str().unwrap(), results, &context).await;
+        run(path.to_str().unwrap(), results, &context, texture_url).await;
     }
 }
 
-async fn run(model_path: &str, results_path: &String, context: &HeadlessContext) {
+pub async fn run(
+    model_path: &str,
+    results_path: &String,
+    context: &HeadlessContext,
+    texture_url: &Option<&String>,
+) {
     let start = std::time::Instant::now();
 
     println!("Running: {}", model_path);
@@ -19,9 +29,14 @@ async fn run(model_path: &str, results_path: &String, context: &HeadlessContext)
     let width = 2000;
     let height = 2000;
 
-    let textures = vec![
-        String::from("https://www.w3.org/MarkUp/Test/xhtml-print/20050519/tests/jpeg420exif.jpg"),
-    ];
+    let texture = if let Some(texture_url) = texture_url {
+        let texture_url = *texture_url;
+        texture_url.to_owned()
+    } else {
+        String::from("https://www.w3.org/MarkUp/Test/xhtml-print/20050519/tests/jpeg420exif.jpg")
+    };
+
+    let textures = vec![texture];
 
     let maybe_pixels = crate::render::render_urls(
         String::from(model_path),

@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use clap::{Arg, Command};
 
 use rs3d::{collect, download, fbx2gltf, render_file, server, Subcommand};
@@ -14,10 +16,16 @@ async fn main() {
                 .arg(
                     Arg::new("input")
                         .default_value("glb")
+                        .long_help("input file or directory")
                 )
                 .arg(
                     Arg::new("results")
                         .default_value("results")
+                        .long_help("output directory, will be created if not present")
+                )
+                .arg(
+                    Arg::new("texture_url")
+                        .long_help("texture url to be used, local or remote")
                 )
                 .about("Render a single glb/gltf file or directory containing multiple")
         );
@@ -42,7 +50,15 @@ async fn main() {
             let context = three_d::HeadlessContext::new().unwrap();
             let input = submatches.get_one::<String>("input").unwrap();
             let results = submatches.get_one::<String>("results").unwrap();
-            render_file::run_multiple(input, results, &context).await;
+            let texture_url = submatches.get_one::<String>("texture_url");
+
+            let input_path = Path::new(input);
+
+            if input_path.is_dir() {
+                render_file::run_multiple(input, results, &context, &texture_url).await;
+            } else {
+                render_file::run(input, results, &context, &texture_url).await;
+            }
         }
         Some((subcommand, submatches)) => {
             for component in &debug_components {

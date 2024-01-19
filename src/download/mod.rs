@@ -18,6 +18,7 @@ impl crate::Subcommand for Download {
             .arg(
                 Arg::new("config")
                     .required(true)
+                    .long_help("path to config.toml to be used")
             )
             .about("Download models from a remote server to a local directory (for caching)")
     }
@@ -34,10 +35,13 @@ impl crate::Subcommand for Download {
 }
 
 pub async fn models(
-    base_url: String,
+    mut base_url: String,
     models: Vec<String>,
     output_dir: String,
 ) -> Result<()> {
+    if !base_url.ends_with("/") {
+        base_url = format!("{}/", base_url);
+    }
     let base = Url::parse(base_url.as_str())?;
     let output = Path::new(output_dir.as_str());
 

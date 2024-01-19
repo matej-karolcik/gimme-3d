@@ -1,7 +1,6 @@
 port = 3030
 
 [models]
-# the trailing slash is important
 models_base_url = 'https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/'
 local_model_dir = 'models'
 models = [
