@@ -6,10 +6,10 @@ The entrypoint to all functionality is the `cmd` bin target.
 
 - `serve`: start a server
 - `render`: render a `glb/gltf` file or directory
-- `collect`: collect all models from a local directory
-- `convert`: convert `fbx` models into `gltf/glb`
 - `download`: before starting a server, you can make the render requests a little faster
   by downloading the models to local path, the urls and local directory are configured using `config.toml`
+- `collect`: collect all models from a local directory
+- `convert`: convert `fbx` models into `gltf/glb`
 
 ```
 Usage: cmd [COMMAND]

@@ -30,16 +30,18 @@ async fn main() {
                 .about("Render a single glb/gltf file or directory containing multiple")
         );
 
-    let mut debug_components: Vec<Box<dyn Subcommand>> = vec![];
+    let mut debug_components: Vec<Box<dyn Subcommand>> = vec![
+        Box::new(download::Download {}),
+    ];
 
+    // todo fix this
     if Ok("release".to_owned()) != std::env::var("PROFILE") {
         debug_components.push(Box::new(collect::Collect {}));
-        debug_components.push(Box::new(download::Download {}));
         debug_components.push(Box::new(fbx2gltf::Fbx2Gltf {}));
+    }
 
-        for component in &debug_components {
-            root = root.subcommand(component.get_subcommand());
-        }
+    for component in &debug_components {
+        root = root.subcommand(component.get_subcommand());
     }
 
     match root.get_matches().subcommand() {

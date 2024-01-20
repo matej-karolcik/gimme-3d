@@ -19,8 +19,8 @@ COPY src ./src
 
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/src/renderer/target \
-    cargo build --release --bin server \
-    && mv target/release/server /tmp/server
+    cargo build --release --bin cmd \
+    && mv target/release/cmd /tmp/cmd
 
 FROM debian:trixie-20231218-slim
 
@@ -33,12 +33,9 @@ RUN apt-get update && apt-get install -y \
     libxi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /tmp/server /app/server
+COPY --from=builder /tmp/cmd /app/cmd
 COPY config.toml /app/config.toml
 
 WORKDIR /app
 
-# todo remove this
-COPY glb glb
-
-ENTRYPOINT ["xvfb-run", "-a", "/app/server"]
+ENTRYPOINT ["xvfb-run", "-a", "/app/cmd", "serve"]
