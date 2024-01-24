@@ -39,7 +39,7 @@ pub async fn render_urls(
 
     info!("Model load: {:?}", std::time::Instant::now() - start);
 
-    let model_slice = Vec::from(loaded_assets.get(model_path.clone().as_str())
+    let model_slice = Vec::from(loaded_assets.get(final_model_path.clone().as_str())
         .map_err(|e| Error::AssetLoadingError(e))?);
 
     let gltf = gltf::Gltf::from_slice(model_slice.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
