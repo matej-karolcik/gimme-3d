@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -57,7 +58,7 @@ pub async fn models(
             let url = base.join(model.as_str()).unwrap();
             let output = output.join(model.as_str()).to_owned();
             async {
-                download(url, output).await.unwrap();
+                download(url, output, &pb).await.unwrap();
                 pb.clone().inc(1);
             }
         })
@@ -68,15 +69,20 @@ pub async fn models(
     Ok(())
 }
 
-async fn download(url: Url, output: PathBuf) -> Result<()> {
+async fn download(url: Url, output: PathBuf, pb: &ProgressBar) -> Result<()> {
     let start = std::time::Instant::now();
-    let response = reqwest::get(url).await?;
+    let mut response = reqwest::get(url).await?;
     let mut file = std::fs::File::create(output.clone())?;
 
-    let content = response.text().await?;
-    std::io::copy(&mut content.as_bytes(), &mut file)?;
+    while let Some(chunk) = response.chunk().await? {
+        file.write_all(&chunk)?;
+    }
 
-    println!("downloaded {} in {:?}", output.to_str().unwrap(), start.elapsed());
+    pb.set_message(format!(
+        "Downloaded {} in {}ms",
+        output.to_str().unwrap(),
+        start.elapsed().as_millis()
+    ));
 
     Ok(())
 }

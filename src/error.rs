@@ -5,6 +5,9 @@ pub enum Error {
     #[error("Asset loading error: {0}")]
     AssetLoadingError(three_d_asset::Error),
 
+    #[error("Model loading error: {0}")]
+    ModelLoadingError(std::io::Error),
+
     #[error("Gltf parsing error: {0}")]
     GltfParsingError(gltf::Error),
 

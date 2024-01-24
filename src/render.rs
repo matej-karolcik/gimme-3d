@@ -24,10 +24,13 @@ pub async fn render_urls(
     let start = std::time::Instant::now();
 
     let mut to_load = textures.clone();
+    let final_model_path;
 
     if let Ok(local_model_path) = get_local_model(local_model_dir, &model_path.clone()) {
+        final_model_path = local_model_path.clone();
         to_load.push(local_model_path);
     } else {
+        final_model_path = model_path.clone();
         to_load.push(model_path.clone());
     }
 
@@ -42,7 +45,7 @@ pub async fn render_urls(
     let gltf = gltf::Gltf::from_slice(model_slice.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
-    let model = loaded_assets.deserialize(model_path.clone().as_str()).context("loading model")?;
+    let model = loaded_assets.deserialize(final_model_path.clone().as_str()).context("loading model")?;
 
     let cpu_textures: Vec<CpuTexture> = textures.iter()
         .map(|texture_path| {
