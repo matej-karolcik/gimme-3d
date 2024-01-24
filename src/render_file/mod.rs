@@ -33,7 +33,7 @@ pub async fn run(
         let texture_url = *texture_url;
         texture_url.to_owned()
     } else {
-        String::from("https://www.w3.org/MarkUp/Test/xhtml-print/20050519/tests/jpeg420exif.jpg")
+        String::from("https://www.shutterstock.com/shutterstock/photos/72627163/display_1500/stock-vector-color-test-for-television-for-checking-quality-also-available-as-jpeg-72627163.jpg")
     };
 
     let textures = vec![texture];

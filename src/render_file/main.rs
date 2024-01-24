@@ -1,17 +1,31 @@
 use three_d::*;
 
-use rs3d::render_file::run_multiple;
+use rs3d::render_file::{run, run_multiple};
 
 #[tokio::main]
 async fn main() {
     let context = HeadlessContext::new().unwrap();
     let _ = std::fs::create_dir("results");
 
-    // run("glb/1_p1_duvet-cover_1350x2000.glb", &context).await;
-    // run("glb/1_p1_t-shirt.glb", &context).await;
-    // run("glb/PhoneCase_IPhone12.glb", &context).await;
-    // run("output/PhoneCase_IPhone12_out/PhoneCase_IPhone12.gltf", &context).await;
-    // return;
+    run(
+        "glb/0_p3_bath-towel.glb",
+        &String::from("results"),
+        &context,
+        &None,
+    ).await;
+    // run(
+    //     "glb/1_p1_t-shirt.glb",
+    //     &String::from("results"),
+    //     &context,
+    //     &None,
+    // ).await;
+    // run(
+    //     "glb/cushion002.glb",
+    //     &String::from("results"),
+    //     &context,
+    //     &None,
+    // ).await;
+    return;
 
 
     let dirs = std::fs::read_dir("glb").unwrap();

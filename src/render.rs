@@ -179,6 +179,12 @@ fn render(
     let mut mesh = Model::<ColorMaterial>::new(&context, &model).context("creating mesh")?;
     let num_textures = cpu_textures.len();
 
+    // let mut textures: Vec<&three_d_asset::Texture2D> = vec![];
+    // for cpu_texture in cpu_textures.iter() {
+    //     let texture = &cpu_texture;
+    //     textures.push(texture);
+    // }
+
     mesh.iter_mut()
         .enumerate()
         .for_each(|(pos, m)| {
@@ -245,12 +251,32 @@ fn render(
         vec![]
     };
 
+    // let effect = three_d::FxaaEffect {};
+    // let render_depth_texture = DepthTexture2D::new::<f32>(
+    //     &context,
+    //     viewport.width,
+    //     viewport.height,
+    //     Wrapping::ClampToEdge,
+    //     Wrapping::ClampToEdge,
+    // );
+
     let pixels = RenderTarget::new(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
         .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0))
         .render(&camera, &mesh, lights.as_slice())
+        // .render_with_effect(
+        //     &effect,
+        //     &camera,
+        //     &mesh,
+        //     lights.as_slice(),
+        //     Some(ColorTexture::Array {
+        //         texture: &Texture2DArray::new(&context, textures.as_slice()),
+        //         layers: &[textures.len() as u32],
+        //     }),
+        //     Some(DepthTexture::Single(&render_depth_texture)),
+        // )
         .read_color();
 
     let result = CpuTexture {
