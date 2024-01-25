@@ -1,3 +1,4 @@
+use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -72,7 +73,14 @@ async fn serve(
 
                 let (response_tx, response_rx) = oneshot::channel();
                 request_tx.try_send((r, response_tx)).unwrap();
-                let pixels = response_rx.await.unwrap().unwrap();
+                let pixels = match response_rx.await.unwrap() {
+                    Ok(content) => content,
+                    Err(e) => {
+                        drop(permit);
+                        log::error!("Error: {}", e);
+                        return Err(warp::reject::Rejection::from(InternalServerError(e)));
+                    }
+                };
 
                 drop(permit);
 
@@ -139,3 +147,15 @@ fn respond(accept_header: Option<String>, pixels: RawPixels, start: std::time::I
         .body(pixels.into())
         .unwrap())
 }
+
+struct InternalServerError(anyhow::Error);
+
+impl Debug for InternalServerError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("InternalServerError")
+            .field("error", &self.0)
+            .finish()
+    }
+}
+
+impl warp::reject::Reject for InternalServerError {}

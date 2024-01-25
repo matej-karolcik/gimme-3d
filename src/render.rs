@@ -111,7 +111,7 @@ pub async fn render_raw_images(
         let to_load = vec![model_path.clone()];
         let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
 
-        loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
+        loaded_assets = loaded_future.await.map_err(|e| Error::ModelNotFound(e))?;
     }
 
     let model_slice = Vec::from(loaded_assets.get(final_model_path.clone())

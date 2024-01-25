@@ -10,6 +10,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path"
+	"strings"
 	"sync"
 	"time"
 )
@@ -18,6 +20,7 @@ var (
 	conc        = flag.Int("conc", 1, "number of concurrent requests")
 	numRequests = flag.Int("n", 1, "number of requests")
 	webp        = flag.Bool("webp", false, "use webp as output format")
+	all         = flag.Bool("all", false, "run all models")
 )
 
 func main() {
@@ -29,7 +32,6 @@ func main() {
 
 func run() error {
 	endpointUrl := "http://localhost:3030/render-form"
-	modelUrl := "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_duvet-cover_1350x2000.glb"
 	client := &http.Client{}
 
 	lock := &sync.Mutex{}
@@ -37,30 +39,68 @@ func run() error {
 
 	pool, err := ants.NewPoolWithFunc(*conc, func(payload interface{}) {
 		defer wg.Done()
-		start := time.Now()
+
+		modelUrl := payload.(string)
 
 		req, err := createRequest(endpointUrl, modelUrl, "../testdata/image.jpg")
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = client.Do(req)
+		start := time.Now()
+
+		resp, err := client.Do(req)
 		if err != nil {
 			panic(err)
 		}
 
+		if resp.StatusCode != http.StatusOK {
+			fmt.Printf("%-50serror\n", path.Base(modelUrl))
+			return
+		}
+
 		lock.Lock()
 		defer lock.Unlock()
-		fmt.Printf("roundtrip time: %s\n", time.Since(start))
+		if *all {
+			fmt.Printf("%-50s%s\n", path.Base(modelUrl), time.Since(start))
+		} else {
+			fmt.Printf("roundtrip time: %s\n", time.Since(start))
+		}
 	})
 
 	if err != nil {
 		return fmt.Errorf("creating pool: %w", err)
 	}
 
+	if *all {
+		start := time.Now()
+		models, err := os.ReadDir("../glb")
+		if err != nil {
+			return fmt.Errorf("reading glb directory: %w", err)
+		}
+
+		for _, model := range models {
+			if !strings.HasSuffix(model.Name(), ".glb") {
+				continue
+			}
+			wg.Add(1)
+
+			modelUrl := "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/" + model.Name()
+			if err = pool.Invoke(modelUrl); err != nil {
+				panic(err)
+			}
+		}
+
+		fmt.Printf("\n%-50s%s\n", "total time", time.Since(start))
+
+		return nil
+	}
 	for i := 0; i < *numRequests; i++ {
 		wg.Add(1)
-		if err = pool.Invoke(struct{}{}); err != nil {
+
+		const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_duvet-cover_1350x2000.glb"
+		//const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/cushion.glb"
+		if err = pool.Invoke(modelUrl); err != nil {
 			panic(err)
 		}
 	}

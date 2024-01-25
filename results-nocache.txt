@@ -1,0 +1,18 @@
+0_p1_blanket-fleece_ 1000x1000.glb                6.193355833s
+0_p3_bath-towel.glb                               4.343014s
+1_p1_duvet-cover_1350x2000.glb                    3.703980667s
+1_p1_hoodie.glb                                   5.336563375s
+1_p1_sweater_Front.glb                            1.182183875s
+1_p1_t-shirt-woman.glb                            2.701156416s
+1_p1_t-shirt.glb                                  2.520141625s
+2_p1_hoodie.glb                                   1.157251125s
+2_p1_sweater.glb                                  1.537979542s
+2_p1_t-shirt_Front.glb                            1.693818541s
+3_p1_shower-curtain_1800x2000.glb                 1.406563458s
+3_p4_cushion_400x400.glb                          1.659496875s
+Beach_Towel_900x1800.glb                          4.762601334s
+NotebookA5.glb                                    1.582243708s
+PhoneCase_IPhone12.glb                            1.278193958s
+cushion002.glb                                    error
+
+total time                                        41.966223708s

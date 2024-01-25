@@ -8,6 +8,9 @@ pub enum Error {
     #[error("Model loading error: {0}")]
     ModelLoadingError(std::io::Error),
 
+    #[error("Model not found: {0}")]
+    ModelNotFound(three_d_asset::Error),
+
     #[error("Gltf parsing error: {0}")]
     GltfParsingError(gltf::Error),
 
