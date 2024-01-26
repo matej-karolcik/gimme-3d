@@ -1,7 +1,7 @@
 port = 3030
 
 [models]
-models_base_url = 'https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/'
+models_base_url = 'https://foobar.com/gltf/'
 local_model_dir = '/var/models/'
 models = [
     'foo.glb',

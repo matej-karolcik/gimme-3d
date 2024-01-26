@@ -7,7 +7,7 @@ use warp::Filter;
 use warp::multipart::FormData;
 use warp::reply::Response;
 
-use rs3d::render::RawPixels;
+use gimme_3d::render::RawPixels;
 
 mod config;
 mod request;
@@ -29,7 +29,7 @@ async fn main() {
     loop {
         let (request, response_tx) = request_rx.recv().await.unwrap();
         if request.has_raw_textures() {
-            let pixels = rs3d::render::render_raw_images(
+            let pixels = gimme_3d::render::render_raw_images(
                 request.model,
                 request.textures.unwrap(),
                 &context,
@@ -41,7 +41,7 @@ async fn main() {
             continue;
         }
 
-        let pixels = rs3d::render::render_urls(
+        let pixels = gimme_3d::render::render_urls(
             request.model,
             request.texture_urls.unwrap_or_default(),
             &context,

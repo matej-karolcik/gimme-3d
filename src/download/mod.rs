@@ -18,7 +18,7 @@ impl crate::Subcommand for Download {
         Command::new("download")
             .arg(
                 Arg::new("config")
-                    .required(true)
+                    .default_value("config.toml")
                     .long_help("path to config.toml to be used")
             )
             .about("Download models from a remote server to a local directory (for caching)")

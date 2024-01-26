@@ -38,7 +38,7 @@ mod tests {
 
         assert_eq!(config.port, 3030);
         assert_eq!(config.models.local_model_dir, "/var/models/");
-        assert_eq!(config.models.models_base_url, "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/");
+        assert_eq!(config.models.models_base_url, "https://foobar.com/gltf/");
         assert_eq!(config.models.models.len(), 2);
         assert_eq!(config.models.models[0], "foo.glb");
         assert_eq!(config.models.models[1], "bar.glb");

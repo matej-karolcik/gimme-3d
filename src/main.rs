@@ -2,7 +2,7 @@ use std::path::Path;
 
 use clap::{Arg, Command};
 
-use rs3d::{collect, download, fbx2gltf, render_file, server, Subcommand};
+use gimme_3d::{collect, download, fbx2gltf, render_file, server, Subcommand};
 
 #[tokio::main]
 async fn main() {

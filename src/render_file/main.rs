@@ -1,6 +1,6 @@
 use three_d::*;
 
-use rs3d::render_file::{run, run_multiple};
+use gimme_3d::render_file::{run, run_multiple};
 
 #[tokio::main]
 async fn main() {
