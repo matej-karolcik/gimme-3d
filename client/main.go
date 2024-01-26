@@ -87,6 +87,9 @@ func run() error {
 			}
 		}
 
+		wg.Wait()
+		pool.Release()
+
 		fmt.Printf("\n%-50s%s\n", "total time", time.Since(start))
 
 		return nil
