@@ -17,6 +17,10 @@ path = "src/server/main.rs"
 name = "cmd"
 path = "src/main.rs"
 
+[[bin]]
+name = "webp"
+path = "src/experiments/webp.rs"
+
 
 [dependencies]
 gltf = { version = "1.4.0", features = ["KHR_lights_punctual"] }

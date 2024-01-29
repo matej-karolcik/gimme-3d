@@ -15,6 +15,9 @@ run-server: build
 		--entrypoint="" \
 		$(image) /bin/sh -c "/app/cmd download && /usr/bin/xvfb-run -a /app/cmd serve"
 
+run-client-webp:
+	cd client && go run main.go -all -save -size=2000 -iformat=webp -oformat=webp
+
 run-client:
 	cd client && go run main.go -all -save -size=2000
 

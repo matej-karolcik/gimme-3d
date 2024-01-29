@@ -4,10 +4,13 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"github.com/nfnt/resize"
+	"github.com/h2non/bimg"
+	_ "github.com/kolesa-team/go-webp/decoder"
 	"github.com/panjf2000/ants/v2"
-	"image/jpeg"
+	_ "image/jpeg"
+	_ "image/png"
 	"io"
+	"log"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -20,12 +23,13 @@ import (
 )
 
 var (
-	conc        = flag.Int("conc", 1, "number of concurrent requests")
-	numRequests = flag.Int("n", 1, "number of requests")
-	webp        = flag.Bool("webp", false, "use webp as output format")
-	all         = flag.Bool("all", false, "run all models")
-	save        = flag.Bool("save", false, "save image")
-	size        = flag.Int("size", 2000, "size of the preview")
+	conc         = flag.Int("conc", 1, "number of concurrent requests")
+	numRequests  = flag.Int("n", 1, "number of requests")
+	all          = flag.Bool("all", false, "run all models")
+	save         = flag.Bool("save", false, "save image")
+	size         = flag.Int("size", 2000, "size of the preview")
+	inputFormat  = flag.String("iformat", "jpg", "input format")
+	outputFormat = flag.String("oformat", "png", "output format")
 
 	lock   = &sync.Mutex{}
 	wg     = &sync.WaitGroup{}
@@ -36,7 +40,6 @@ var (
 
 const (
 	results     = "out"
-	imagePath   = "../testdata/image.jpg"
 	endpointUrl = "http://localhost:3030/render-form"
 )
 
@@ -53,6 +56,8 @@ func run() error {
 	} else {
 		fmt.Printf("running %d requests with %d concurrent requests, size: %d\n\n", *numRequests, *conc, *size)
 	}
+
+	imagePath := fmt.Sprintf("../testdata/image.%s", *inputFormat)
 
 	if err := loadImage(imagePath); err != nil {
 		return fmt.Errorf("loading image: %w", err)
@@ -97,8 +102,8 @@ func run() error {
 	for i := 0; i < *numRequests; i++ {
 		wg.Add(1)
 
-		const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_duvet-cover_1350x2000.glb"
-		//const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/cushion.glb"
+		//const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_duvet-cover_1350x2000.glb"
+		const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_t-shirt.glb"
 		if err = pool.Invoke(modelUrl); err != nil {
 			panic(err)
 		}
@@ -124,7 +129,7 @@ func handle(payload interface{}) {
 
 	resp, err := client.Do(req)
 	if err != nil {
-		panic(err)
+		log.Fatalln(err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -141,7 +146,8 @@ func handle(payload interface{}) {
 	lock.Unlock()
 
 	if *save {
-		f, err := os.Create(path.Join(results, path.Base(strings.ReplaceAll(modelUrl, ".glb", ".png"))))
+		f, err := os.Create(path.Join(results, path.Base(
+			strings.ReplaceAll(modelUrl, ".glb", "."+*outputFormat))))
 		if err != nil {
 			panic(err)
 		}
@@ -188,10 +194,7 @@ func createRequest(endpointUrl, modelUrl string) (*http.Request, error) {
 	}
 
 	req.Header.Add("Content-Type", writer.FormDataContentType())
-
-	if *webp {
-		req.Header.Add("Accept", mime.TypeByExtension(".webp"))
-	}
+	req.Header.Add("Accept", mime.TypeByExtension("."+*outputFormat))
 
 	return req, nil
 }
@@ -216,17 +219,18 @@ func loadImage(path string) error {
 	defer func() {
 		_ = f.Close()
 	}()
-	im, err := jpeg.Decode(f)
+
+	imageBytes, err = bimg.Read(path)
 	if err != nil {
 		return fmt.Errorf("decoding image: %w", err)
 	}
-	im = resize.Resize(uint(*size), 0, im, resize.Lanczos3)
+	im := bimg.NewImage(imageBytes)
 
-	var buf bytes.Buffer
-	if err = jpeg.Encode(&buf, im, nil); err != nil {
-		return fmt.Errorf("encoding image: %w", err)
+	b, err := im.Resize(*size, *size)
+	if err != nil {
+		return fmt.Errorf("resizing image: %w", err)
 	}
 
-	imageBytes = buf.Bytes()
+	imageBytes = b
 	return nil
 }

@@ -6,9 +6,10 @@ use log::info;
 use nalgebra::Quaternion;
 use three_d::{Attenuation, Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, PointLight, RenderTarget, Texture2D, Texture2DRef, vec3};
 use three_d_asset::{Interpolation, radians, Srgba, TextureData, Viewport, Wrapping};
-use three_d_asset::io::{Deserialize, RawAssets, Serialize};
+use three_d_asset::io::Serialize;
 
 use crate::error::Error;
+use crate::img;
 use crate::object::{Light, LightKind, Transform};
 
 pub type RawPixels = Vec<u8>;
@@ -37,7 +38,8 @@ pub async fn render_urls(
     let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
     let mut loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
 
-    info!("Model load: {:?}", std::time::Instant::now() - start);
+    info!("Assets load: {:?}", std::time::Instant::now() - start);
+    let start = std::time::Instant::now();
 
     let model_slice = Vec::from(loaded_assets.get(final_model_path.clone().as_str())
         .map_err(|e| Error::AssetLoadingError(e))?);
@@ -46,6 +48,9 @@ pub async fn render_urls(
     let doc = gltf.document;
 
     let model = loaded_assets.deserialize(final_model_path.clone().as_str()).context("loading model")?;
+
+    info!("Model load: {:?}", std::time::Instant::now() - start);
+    let start = std::time::Instant::now();
 
     let cpu_textures: Vec<CpuTexture> = textures.iter()
         .map(|texture_path| {
@@ -80,19 +85,10 @@ pub async fn render_raw_images(
 ) -> Result<RawPixels> {
     let start = std::time::Instant::now();
 
-    let mut raw_assets = RawAssets::new();
-    raw_textures.iter()
-        .enumerate()
-        .for_each(|(i, raw_texture)| {
-            raw_assets.insert(i.to_string(), raw_texture.clone());
-        });
-
-    let cpu_textures = (0..raw_textures.len())
-        .map(|i| {
-            let mut cpu_texture = three_d_asset::texture::Texture2D::deserialize(
-                i.to_string(),
-                &mut raw_assets,
-            ).unwrap();
+    let cpu_textures = raw_textures
+        .iter()
+        .map(|raw_texture| {
+            let mut cpu_texture = img::decode_img(raw_texture.as_slice()).expect("decoding image");
             cpu_texture.data.to_linear_srgb();
             cpu_texture
         })

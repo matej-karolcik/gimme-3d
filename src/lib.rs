@@ -10,6 +10,7 @@ pub mod render;
 pub mod fbx2gltf;
 pub mod download;
 pub mod collect;
+mod img;
 
 
 #[async_trait]
