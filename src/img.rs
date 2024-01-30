@@ -4,6 +4,7 @@ use image::DynamicImage;
 use image::io::Reader;
 use three_d_asset::{Texture2D, TextureData};
 
+use crate::error::Error;
 
 pub fn decode_img(bytes: &[u8]) -> anyhow::Result<Texture2D> {
     let reader = Reader::new(Cursor::new(bytes))
@@ -38,12 +39,29 @@ pub fn decode_img(bytes: &[u8]) -> anyhow::Result<Texture2D> {
         _ => unimplemented!(),
     };
 
-    Ok(Texture2D {
+    let mut texture = Texture2D {
         data,
         width,
         height,
         ..Default::default()
-    })
+    };
+
+    texture.data.to_linear_srgb();
+
+    Ok(texture)
+}
+
+pub async fn download_img(url: String) -> anyhow::Result<Texture2D> {
+    let response = reqwest::get(url).await?;
+    if !response.status().is_success() {
+        return Err(Error::ImageDownloadError {
+            status_code: response.status(),
+            message: response.text().await.unwrap_or("".to_owned()),
+        }.into());
+    }
+
+    let bytes = response.bytes().await?;
+    decode_img(&bytes)
 }
 
 #[cfg(test)]

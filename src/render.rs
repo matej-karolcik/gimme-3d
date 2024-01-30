@@ -15,7 +15,7 @@ use crate::object::{Light, LightKind, Transform};
 pub type RawPixels = Vec<u8>;
 
 pub async fn render_urls(
-    model_path: String,
+    remote_model_path: String,
     textures: Vec<String>,
     context: &three_d::Context,
     width: u32,
@@ -24,18 +24,20 @@ pub async fn render_urls(
 ) -> Result<RawPixels> {
     let start = std::time::Instant::now();
 
-    let mut to_load = textures.clone();
+    let texture_futures = textures
+        .iter()
+        .map(|url| tokio::spawn(img::download_img(url.clone())));
+
     let final_model_path;
 
-    if let Ok(local_model_path) = get_local_model(local_model_dir, &model_path.clone()) {
+    if let Ok(local_model_path) = get_local_model(local_model_dir, &remote_model_path.clone()) {
         final_model_path = local_model_path.clone();
-        to_load.push(local_model_path);
     } else {
-        final_model_path = model_path.clone();
-        to_load.push(model_path.clone());
+        final_model_path = remote_model_path.clone();
     }
 
-    let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
+    let to_load = &[final_model_path.clone()];
+    let loaded_future = three_d_asset::io::load_async(to_load);
     let mut loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
 
     info!("Assets load: {:?}", std::time::Instant::now() - start);
@@ -52,15 +54,10 @@ pub async fn render_urls(
     info!("Model load: {:?}", std::time::Instant::now() - start);
     let start = std::time::Instant::now();
 
-    let cpu_textures: Vec<CpuTexture> = textures.iter()
-        .map(|texture_path| {
-            let mut cpu_texture: CpuTexture = loaded_assets
-                .deserialize(texture_path)
-                .context("loading texture")
-                .unwrap();
-            cpu_texture.data.to_linear_srgb();
-            cpu_texture
-        })
+    let cpu_textures: Vec<_> = futures_util::future::join_all(texture_futures)
+        .await
+        .into_iter()
+        .map(|result| result.unwrap().unwrap())
         .collect();
 
     info!("Textures load: {:?}", std::time::Instant::now() - start);
