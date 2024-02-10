@@ -57,7 +57,11 @@ pub async fn render_urls(
     let cpu_textures: Vec<_> = futures_util::future::join_all(texture_futures)
         .await
         .into_iter()
-        .map(|result| result.unwrap().unwrap())
+        .map(|result| {
+            let mut cpu_texture = result.unwrap().unwrap();
+            cpu_texture.data.to_linear_srgb();
+            cpu_texture
+        })
         .collect();
 
     info!("Textures load: {:?}", std::time::Instant::now() - start);
@@ -197,15 +201,16 @@ fn render(
     let at = camera_props.parent_transform.matrix.transform_point(&origin);
 
     let viewport = Viewport::new_at_origo(width, height);
+    const FACTOR: f32 = 100.;
 
     let mut camera = Camera::new_perspective(
         viewport,
         vec3(point.x, point.y, point.z),
         vec3(at.x, at.y, at.z),
         vec3(0.0, 1.0, 0.0),
-        radians(camera_props.yfov * camera_props.aspect_ratio),
-        0.01,
-        camera_props.zfar,
+        radians(camera_props.yfov * (height as f32 / width as f32) * camera_props.aspect_ratio),
+        camera_props.znear / FACTOR,
+        camera_props.zfar / FACTOR,
     );
 
     if (camera_props.parent_transform.decomposed().1[0].abs() - FRAC_1_SQRT_2).abs() < 0.0001

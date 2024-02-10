@@ -8,7 +8,7 @@ upload-gltf:
 
 run-server: build
 	docker run --memory=1024m \
-		--cpus=1 \
+		--cpus=2 \
 		--init \
 		-it --rm \
 		-p 3030:3030 \
@@ -37,3 +37,6 @@ request:
 	-H "Content-Type: application/json" \
 	-d @request.json http://localhost:3030/render \
 	-o output.png
+
+convert-assets:
+	cargo run --bin cmd -- convert -i ./fbx -b -o glb

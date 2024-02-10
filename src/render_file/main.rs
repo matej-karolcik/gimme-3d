@@ -7,18 +7,18 @@ async fn main() {
     let context = HeadlessContext::new().unwrap();
     let _ = std::fs::create_dir("results");
 
-    run(
-        "glb/0_p3_bath-towel.glb",
-        &String::from("results"),
-        &context,
-        &None,
-    ).await;
     // run(
-    //     "glb/1_p1_t-shirt.glb",
+    //     "glb/0_p3_bath-towel.glb",
     //     &String::from("results"),
     //     &context,
     //     &None,
     // ).await;
+    run(
+        "glb/1_p1_t-shirt.glb",
+        &String::from("results"),
+        &context,
+        &Some(&String::from("testdata/canvas.jpg")),
+    ).await;
     // run(
     //     "glb/cushion002.glb",
     //     &String::from("results"),

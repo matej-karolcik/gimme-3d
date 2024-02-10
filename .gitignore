@@ -4,6 +4,7 @@
 /glb/*
 /models/*
 /results/*
+/fbx/*
 
 results.bin
 output.png

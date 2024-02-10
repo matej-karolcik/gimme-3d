@@ -39,19 +39,19 @@ pub fn decode_img(bytes: &[u8]) -> anyhow::Result<Texture2D> {
         _ => unimplemented!(),
     };
 
-    let mut texture = Texture2D {
+    Ok(Texture2D {
         data,
         width,
         height,
         ..Default::default()
-    };
-
-    texture.data.to_linear_srgb();
-
-    Ok(texture)
+    })
 }
 
 pub async fn download_img(url: String) -> anyhow::Result<Texture2D> {
+    if !url.starts_with("http") {
+        return decode_img(std::fs::read(url)?.as_slice());
+    }
+
     let response = reqwest::get(url).await?;
     if !response.status().is_success() {
         return Err(Error::ImageDownloadError {

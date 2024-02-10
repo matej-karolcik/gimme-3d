@@ -226,7 +226,7 @@ func loadImage(path string) error {
 	}
 	im := bimg.NewImage(imageBytes)
 
-	b, err := im.Resize(*size, *size)
+	b, err := im.Thumbnail(*size)
 	if err != nil {
 		return fmt.Errorf("resizing image: %w", err)
 	}

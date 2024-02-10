@@ -1,7 +1,7 @@
 port = 3030
 
 [models]
-models_base_url = 'https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/'
+models_base_url = 'https://jq-staging-matko.s3.eu-central-1.amazonaws.com/glb-lq/'
 local_model_dir = 'models'
 models = [
     'Beach_Towel_900x1800.glb',

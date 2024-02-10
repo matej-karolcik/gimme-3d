@@ -26,7 +26,7 @@ pub async fn run(
 
     println!("Running: {}", model_path);
 
-    let width = 2000;
+    let width = 2222;
     let height = 2000;
 
     let texture = if let Some(texture_url) = texture_url {
