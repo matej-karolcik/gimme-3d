@@ -13,18 +13,18 @@ async fn main() {
     //     &context,
     //     &None,
     // ).await;
-    run(
-        "glb/1_p1_t-shirt.glb",
-        &String::from("results"),
-        &context,
-        &Some(&String::from("testdata/canvas.jpg")),
-    ).await;
     // run(
-    //     "glb/cushion002.glb",
+    //     "glb/1_p1_t-shirt.glb",
     //     &String::from("results"),
     //     &context,
-    //     &None,
+    //     &Some(&String::from("testdata/canvas.jpg")),
     // ).await;
+    run(
+        "glb/DUVET.glb",
+        &String::from("results"),
+        &context,
+        &None,
+    ).await;
     return;
 
 

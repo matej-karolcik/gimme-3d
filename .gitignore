@@ -5,6 +5,7 @@
 /models/*
 /results/*
 /fbx/*
+/masks/*
 
 results.bin
 output.png

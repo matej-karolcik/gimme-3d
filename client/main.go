@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -58,6 +57,7 @@ func run() error {
 	}
 
 	imagePath := fmt.Sprintf("../testdata/image.%s", *inputFormat)
+	//imagePath = "../testdata/canvas.png"
 
 	if err := loadImage(imagePath); err != nil {
 		return fmt.Errorf("loading image: %w", err)
@@ -167,10 +167,10 @@ func createRequest(endpointUrl, modelUrl string) (*http.Request, error) {
 	if err := addField(writer, "model", modelUrl); err != nil {
 		return nil, fmt.Errorf("adding model field: %w", err)
 	}
-	if err := addField(writer, "width", strconv.Itoa(*size)); err != nil {
+	if err := addField(writer, "width", "3000"); err != nil {
 		return nil, fmt.Errorf("adding width field: %w", err)
 	}
-	if err := addField(writer, "height", strconv.Itoa(*size)); err != nil {
+	if err := addField(writer, "height", "2700"); err != nil {
 		return nil, fmt.Errorf("adding height field: %w", err)
 	}
 

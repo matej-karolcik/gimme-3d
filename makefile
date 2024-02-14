@@ -40,3 +40,6 @@ request:
 
 convert-assets:
 	cargo run --bin cmd -- convert -i ./fbx -b -o glb
+
+preview:
+	RUST_BACKTRACE=1 cargo run --release --bin preview
