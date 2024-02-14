@@ -186,6 +186,7 @@ fn render(
         .for_each(|(pos, m)| {
             let mesh_props = mesh_props.get(pos).unwrap();
             let final_transform = mesh_props.parent_transform * mesh_props.transform;
+            println!("final_transform\n{:?}", final_transform);
             m.set_transformation(final_transform.into());
 
             m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_textures[pos % num_textures]));
@@ -195,27 +196,25 @@ fn render(
         });
 
     let camera_transform = camera_props.parent_transform * camera_props.transform;
-    let origin = Point3::origin();
-    let point = camera_transform.matrix.transform_point(&origin);
-    let at = camera_props.parent_transform.matrix.transform_point(&origin);
+
+    println!("camera_transform\n{:?}", camera_transform);
+
+    let point = camera_transform.position();
+    let at = camera_transform.rotation().transform_point(&Point3::new(0.0, 0.0, -1.0));
+    let up = camera_transform.rotation().transform_point(&Point3::new(0.0, 1.0, 0.0));
 
     let viewport = Viewport::new_at_origo(width, height);
     const FACTOR: f32 = 100.;
 
-    let mut camera = Camera::new_perspective(
+    let camera = Camera::new_perspective(
         viewport,
         vec3(point.x, point.y, point.z),
         vec3(at.x, at.y, at.z),
-        vec3(0.0, 1.0, 0.0),
+        vec3(up.x, up.y, up.z),
         radians(camera_props.yfov * camera_props.aspect_ratio / (width as f32 / height as f32)),
         camera_props.znear / FACTOR,
         camera_props.zfar * FACTOR,
     );
-
-    if (camera_props.parent_transform.decomposed().1[0].abs() - FRAC_1_SQRT_2).abs() < 0.0001
-        && camera_props.transform.has_equal_rotation(&Transform::from_quaternion(Quaternion::identity())) {
-        camera.roll(three_d_asset::Deg::<f32>(90.0));
-    }
 
     let mut texture = Texture2D::new_empty::<[u8; 4]>(
         &context,

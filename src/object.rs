@@ -1,8 +1,9 @@
+use std::fmt;
 use std::ops::Mul;
 
 use cgmath::InnerSpace;
 use cgmath::SquareMatrix;
-use nalgebra::Matrix4;
+use nalgebra::{Matrix4, Point3, Quaternion, Rotation3, UnitQuaternion};
 use three_d::Vector4;
 use three_d_asset::Mat4;
 
@@ -32,7 +33,7 @@ pub struct Light {
     pub intensity: f32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct Transform {
     pub matrix: Matrix4<f32>,
 }
@@ -77,7 +78,7 @@ impl Transform {
             && float_eq(r1[3], r2[3])
     }
 
-    pub fn from_quaternion(quaternion: nalgebra::Quaternion<f32>) -> Self {
+    pub fn from_quaternion(quaternion: Quaternion<f32>) -> Self {
         let t = gltf::scene::Transform::Decomposed {
             translation: [0.0, 0.0, 0.0],
             scale: [1.0, 1.0, 1.0],
@@ -99,6 +100,7 @@ impl Transform {
             self.matrix.m12, self.matrix.m22, self.matrix.m32,
             self.matrix.m13, self.matrix.m23, self.matrix.m33,
         );
+
         let sx = i.x.magnitude();
         let sy = i.y.magnitude();
         let sz = i.determinant().signum() * i.z.magnitude();
@@ -113,6 +115,19 @@ impl Transform {
         let rotation = [r.v.x, r.v.y, r.v.z, r.s];
 
         (translation, rotation, scale)
+    }
+
+    pub fn position(&self) -> Point3<f32> {
+        Point3::new(self.matrix[12], self.matrix[13], self.matrix[14])
+    }
+
+    pub fn rotation(&self) -> Rotation3<f32> {
+        let (_, r, _) = self.decomposed();
+        Rotation3::from(
+            UnitQuaternion::from_quaternion(
+                Quaternion::new(r[3], r[0], r[1], r[2])
+            )
+        )
     }
 }
 
@@ -160,6 +175,22 @@ impl Mul for Transform {
         Self {
             matrix: self.matrix * rhs.matrix,
         }
+    }
+}
+
+impl fmt::Debug for Transform {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (_, _, scale) = self.decomposed();
+        let translation = self.position();
+        let (x, y, z) = self.rotation().euler_angles();
+
+        write!(
+            f,
+            "translation: {:?}\nrotation {:?}\nscale {:?}\n",
+            translation,
+            [x, y, z].iter().map(|v| v.to_degrees()).collect::<Vec<_>>(),
+            scale,
+        )
     }
 }
 

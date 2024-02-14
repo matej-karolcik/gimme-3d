@@ -20,17 +20,17 @@ async fn main() {
     //     "masks/s1_p1_hoodie/00_s1_p1_hoodie.webp".to_string(),
     //     canvas.to_string(),
     // ).await.unwrap();
-    run(
-        &context,
-        "masks/s1_p1_t-shirt/00_s1_p1_t-shirt.webp".to_string(),
-        canvas.to_string(),
-    ).await.unwrap();
+    // run(
+    //     &context,
+    //     "masks/s1_p1_t-shirt/00_s1_p1_t-shirt.webp".to_string(),
+    //     canvas.to_string(),
+    // ).await.unwrap();
     // run(
     //     &context,
     //     "masks/s1_p1_notebook/00_s1_p1_notebook_a5.webp".to_string(),
     //     canvas.to_string(),
     // ).await.unwrap();
-    return;
+    // return;
 
     for mask in mask_files {
         let result = run(
@@ -116,7 +116,7 @@ async fn run(
 
     result.write_to(&mut writer, image::ImageOutputFormat::WebP)?;
 
-    println!("{:<width$}{:?}", model_file, start.elapsed(), width = 50);
+    println!("{:<width$}{:?}\n", model_file, start.elapsed(), width = 50);
 
     Ok(())
 }
