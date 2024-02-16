@@ -1,4 +1,4 @@
-- rotation of the camera must be applied to at-target
 - error handling -> get rid of unwraps
 - gh action: tests, docker image build, push to hub.docker.com
 - helm chart
+- prometheus metrics

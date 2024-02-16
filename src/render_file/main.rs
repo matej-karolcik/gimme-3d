@@ -13,19 +13,19 @@ async fn main() {
     //     &context,
     //     &None,
     // ).await;
-    // run(
-    //     "glb/1_p1_t-shirt.glb",
-    //     &String::from("results"),
-    //     &context,
-    //     &Some(&String::from("testdata/canvas.jpg")),
-    // ).await;
+    gimme_3d::render_file::run(
+        "glb/1_p1_t-shirt.glb",
+        &String::from("results"),
+        &context,
+        &Some(&String::from("testdata/canvas.png")),
+    ).await;
     // run(
     //     "glb/DUVET.glb",
     //     &String::from("results"),
     //     &context,
     //     &None,
     // ).await;
-    // return;
+    return;
 
 
     let dirs = std::fs::read_dir("glb").unwrap();

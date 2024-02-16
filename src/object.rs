@@ -23,45 +23,9 @@ pub struct Mesh {
     pub transform: Transform,
 }
 
-#[derive(Debug, Clone)]
-pub struct Light {
-    pub kind: LightKind,
-    pub parent_transform: Transform,
-    pub transform: Transform,
-    // [0, 255]
-    pub color: [u8; 3],
-    pub intensity: f32,
-}
-
 #[derive(Clone, Copy)]
 pub struct Transform {
     pub matrix: Matrix4<f32>,
-}
-
-#[derive(Debug, Clone)]
-pub enum LightKind {
-    Directional,
-    Point,
-    Spot {
-        inner_cone_angle: f32,
-        outer_cone_angle: f32,
-    },
-}
-
-impl From<gltf::khr_lights_punctual::Kind> for LightKind {
-    fn from(kind: gltf::khr_lights_punctual::Kind) -> Self {
-        match kind {
-            gltf::khr_lights_punctual::Kind::Directional => Self::Directional,
-            gltf::khr_lights_punctual::Kind::Point => Self::Point,
-            gltf::khr_lights_punctual::Kind::Spot {
-                inner_cone_angle,
-                outer_cone_angle,
-            } => Self::Spot {
-                inner_cone_angle,
-                outer_cone_angle,
-            },
-        }
-    }
 }
 
 fn float_eq(a: f32, b: f32) -> bool {

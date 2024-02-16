@@ -88,25 +88,6 @@ pub fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
     None
 }
 
-pub fn get_light(node: &Node, carry: Transform) -> Option<object::Light> {
-    if let Some(light) = node.light() {
-        let color = light.color();
-
-        let r = (color[0] * 255.0).round() as u8;
-        let g = (color[1] * 255.0).round() as u8;
-        let b = (color[2] * 255.0).round() as u8;
-
-        return Some(object::Light {
-            kind: light.kind().into(),
-            parent_transform: carry,
-            transform: object::Transform::from(node.transform()),
-            color: [r, g, b],
-            intensity: light.intensity(),
-        });
-    }
-    None
-}
-
 fn visit_nodes<T>(
     nodes: iter::Children,
     carry: Transform,
@@ -155,16 +136,6 @@ mod tests {
         let camera = extract(&scene, get_camera);
         // todo compare properties
         assert!(camera.is_some());
-        Ok(())
-    }
-
-    #[test]
-    fn light() -> Result<()> {
-        let gltf = load_test_model("testdata/duvet-cover.gltf")?;
-        let doc = gltf.document;
-        let scene = doc.default_scene().ok_or(anyhow!("no default scene"))?;
-        let light = extract(&scene, get_light);
-        assert!(light.is_some());
         Ok(())
     }
 

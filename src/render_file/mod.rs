@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use image::DynamicImage;
 use three_d::*;
 
 pub async fn run_multiple(
@@ -26,6 +27,7 @@ pub async fn run(
 
     println!("Running: {}", model_path);
 
+    let factor = 2;
     let width = 2222;
     let height = 2000;
 
@@ -42,8 +44,8 @@ pub async fn run(
         String::from(model_path),
         textures,
         &context,
-        width,
-        height,
+        width * factor,
+        height * factor,
         &String::new(),
     ).await;
 
@@ -55,6 +57,13 @@ pub async fn run(
     let pixels = maybe_pixels.unwrap();
 
     let img = image::load_from_memory(&pixels).unwrap();
+    let img: DynamicImage = image::imageops::resize(
+        &img,
+        width,
+        height,
+        image::imageops::FilterType::Lanczos3,
+    ).into();
+
     let mut writer = std::fs::File::create(Path::new(results_path)
         .join(Path::new(&model_path).file_name().unwrap())
         .with_extension("webp")).unwrap();
