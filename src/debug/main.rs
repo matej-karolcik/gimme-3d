@@ -30,6 +30,16 @@ async fn main() {
     //     "masks/s1_p1_notebook/00_s1_p1_notebook_a5.webp".to_string(),
     //     canvas.to_string(),
     // ).await.unwrap();
+    // run(
+    //     &context,
+    //     "masks/s0_p3_towel-bath/00_s0_p3_towel-bath.png".to_string(),
+    //     canvas.to_string(),
+    // ).await.unwrap();
+    // run(
+    //     &context,
+    //     "masks/s1_p1_set-pillowcase-duvet-cover/00_s1_p1_set-pillowcase-duvet-cover.webp".to_string(),
+    //     canvas.to_string(),
+    // ).await.unwrap();
     // return;
 
     for mask in mask_files {
@@ -85,13 +95,14 @@ async fn run(
         .unwrap()
         .to_string();
 
+    println!("mask: {}", mask);
     let mask = image::open(mask).unwrap();
     let texture_bytes = std::fs::read(canvas).unwrap();
 
     const UPSCALE: u32 = 2;
 
     let pixels = gimme_3d::render::render_raw_images(
-        Path::new("glb").join(model_file.clone()).to_str().unwrap().to_string(),
+        Path::new("glb2").join(model_file.clone()).to_str().unwrap().to_string(),
         vec![texture_bytes],
         &context,
         mask.width() * UPSCALE,
@@ -101,12 +112,13 @@ async fn run(
 
     let texture = image::load_from_memory(&pixels)?;
 
-    let texture = image::imageops::resize(
+    let texture: DynamicImage = image::imageops::resize(
         &texture,
         mask.width(),
         mask.height(),
-        image::imageops::FilterType::Gaussian,
+        image::imageops::FilterType::Triangle,
     ).into();
+    texture.save(Path::new("textures").join(Path::new(&model_file).with_extension("png")))?;
 
     let result = multiply(&mask, &texture);
 
@@ -116,12 +128,12 @@ async fn run(
 
     result.write_to(&mut writer, image::ImageOutputFormat::WebP)?;
 
-    println!("{:<width$}{:?}\n", model_file, start.elapsed(), width = 50);
+    println!("{:<width$}{:?}", model_file, start.elapsed(), width = 50);
 
     Ok(())
 }
 
-/// images must have the same dimensions
+/// images should have the same dimensions
 fn multiply(bottom: &DynamicImage, top_raw: &DynamicImage) -> DynamicImage {
     let top;
     if top_raw.dimensions() != bottom.dimensions() {

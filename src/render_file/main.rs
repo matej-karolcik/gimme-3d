@@ -1,6 +1,6 @@
 use three_d::*;
 
-use gimme_3d::render_file::{run, run_multiple};
+use gimme_3d::render_file::run_multiple;
 
 #[tokio::main]
 async fn main() {
@@ -19,13 +19,13 @@ async fn main() {
     //     &context,
     //     &Some(&String::from("testdata/canvas.jpg")),
     // ).await;
-    run(
-        "glb/DUVET.glb",
-        &String::from("results"),
-        &context,
-        &None,
-    ).await;
-    return;
+    // run(
+    //     "glb/DUVET.glb",
+    //     &String::from("results"),
+    //     &context,
+    //     &None,
+    // ).await;
+    // return;
 
 
     let dirs = std::fs::read_dir("glb").unwrap();

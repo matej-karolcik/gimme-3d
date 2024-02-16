@@ -19,7 +19,7 @@ run-client-webp:
 	cd client && go run main.go -all -save -size=2000 -iformat=webp -oformat=webp
 
 run-client:
-	cd client && go run main.go -all -save -size=2000
+	cd client && go run main.go -all -save -size=2400
 
 vegeta:
 	vegeta attack -targets=request.txt -format=http -duration=20s -timeout=60s -rate=2 \

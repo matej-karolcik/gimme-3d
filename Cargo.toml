@@ -23,12 +23,12 @@ path = "src/experiments/webp.rs"
 
 [[bin]]
 name = "preview"
-path = "src/preview/main.rs"
+path = "src/debug/main.rs"
 
 
 
 [dependencies]
-gltf = { version = "1.4.0", features = ["KHR_lights_punctual"] }
+gltf = "1.4.0"
 anyhow = "1.0.75"
 clap = "4.4.11"
 tokio = { version = "1.35.0", features = ["rt", "rt-multi-thread", "macros"] }

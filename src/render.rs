@@ -1,16 +1,14 @@
-use std::f32::consts::FRAC_1_SQRT_2;
 use std::path::Path;
 
 use anyhow::{anyhow, Context, Result};
 use log::info;
-use nalgebra::{Point3, Quaternion};
+use nalgebra::Point3;
 use three_d::{Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, RenderTarget, Texture2D, Texture2DRef, vec3};
 use three_d_asset::{Interpolation, radians, TextureData, Viewport, Wrapping};
 use three_d_asset::io::Serialize;
 
 use crate::error::Error;
 use crate::img;
-use crate::object::Transform;
 
 pub type RawPixels = Vec<u8>;
 
@@ -184,11 +182,6 @@ fn render(
     mesh.iter_mut()
         .enumerate()
         .for_each(|(pos, m)| {
-            let mesh_props = mesh_props.get(pos).unwrap();
-            let final_transform = mesh_props.parent_transform * mesh_props.transform;
-            println!("final_transform\n{:?}", final_transform);
-            m.set_transformation(final_transform.into());
-
             m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_textures[pos % num_textures]));
             m.material.is_transparent = true;
             m.material.render_states.cull = Cull::None;
@@ -196,9 +189,6 @@ fn render(
         });
 
     let camera_transform = camera_props.parent_transform * camera_props.transform;
-
-    println!("camera_transform\n{:?}", camera_transform);
-
     let point = camera_transform.position();
     let at = camera_transform.rotation().transform_point(&Point3::new(0.0, 0.0, -1.0));
     let up = camera_transform.rotation().transform_point(&Point3::new(0.0, 1.0, 0.0));
@@ -206,12 +196,14 @@ fn render(
     let viewport = Viewport::new_at_origo(width, height);
     const FACTOR: f32 = 100.;
 
+    let yfov = camera_props.yfov * (camera_props.aspect_ratio / (width as f32 / height as f32));
+
     let camera = Camera::new_perspective(
         viewport,
         vec3(point.x, point.y, point.z),
         vec3(at.x, at.y, at.z),
         vec3(up.x, up.y, up.z),
-        radians(camera_props.yfov * camera_props.aspect_ratio / (width as f32 / height as f32)),
+        radians(yfov),
         camera_props.znear / FACTOR,
         camera_props.zfar * FACTOR,
     );
