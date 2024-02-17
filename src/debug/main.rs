@@ -102,7 +102,7 @@ async fn run(
     const UPSCALE: u32 = 2;
 
     let pixels = gimme_3d::render::render_raw_images(
-        Path::new("glb2").join(model_file.clone()).to_str().unwrap().to_string(),
+        Path::new("glb").join(model_file.clone()).to_str().unwrap().to_string(),
         vec![texture_bytes],
         &context,
         mask.width() * UPSCALE,

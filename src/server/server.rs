@@ -28,7 +28,7 @@ pub async fn run() {
         let (request, response_tx) = request_rx.recv().await.unwrap();
         if request.has_raw_textures() {
             let pixels = render_raw_images(
-                request.model,
+                request.model_url,
                 request.textures.unwrap(),
                 &context,
                 request.width,
@@ -40,7 +40,7 @@ pub async fn run() {
         }
 
         let pixels = render_urls(
-            request.model,
+            request.model_url,
             request.texture_urls.unwrap_or_default(),
             &context,
             request.width,
@@ -68,7 +68,13 @@ async fn serve(
             async move {
                 let start = std::time::Instant::now();
 
-                let r = request::Request::from_form_data(form).await.unwrap();
+                let request_future = request::Request::from_form_data(form).await;
+                if let Err(e) = request_future {
+                    log::error!("Error: {}", e);
+                    return Err(warp::reject::Rejection::from(InternalServerError(e)));
+                }
+
+                let r = request_future.unwrap();
                 let permit = sem.acquire_owned().await.unwrap();
 
                 let (response_tx, response_rx) = oneshot::channel();

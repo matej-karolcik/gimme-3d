@@ -1,5 +1,5 @@
 {
-    "model": "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_duvet-cover_1350x2000.glb",
+    "model_url": "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_set-pillowcase-duvet-cover.glb",
     "texture_urls": [
         "https://images.unsplash.com/photo-1704372569833-c9f60f52eda3?q=80&w=3387&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         "https://images.unsplash.com/photo-1704026438453-fde2ceb923ad?q=80&w=3436&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",

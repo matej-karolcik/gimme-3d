@@ -26,8 +26,14 @@ pub enum Error {
     #[error("No local model found at: {0}")]
     NoLocalModel(String),
 
-    #[error("Could not download model: {status_code} -> {message}")]
+    #[error("Could not download image: {status_code} -> {message}")]
     ImageDownloadError {
+        status_code: reqwest::StatusCode,
+        message: String,
+    },
+
+    #[error("Could not download model: {status_code} -> {message}")]
+    ModelDownloadError {
         status_code: reqwest::StatusCode,
         message: String,
     },

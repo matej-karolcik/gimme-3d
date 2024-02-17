@@ -12,14 +12,18 @@ run-server: build
 		--init \
 		-it --rm \
 		-p 3030:3030 \
+		-v $$(pwd)/config.toml:/app/config.toml \
 		--entrypoint="" \
 		$(image) /bin/sh -c "/app/cmd download && /usr/bin/xvfb-run -a /app/cmd serve"
 
+build-client:
+	cd client && go build -o client
+
 run-client-webp:
-	cd client && go run main.go -all -save -size=2000 -iformat=webp -oformat=webp
+	cd client && ./client -all -save -size=2000 -iformat=webp -oformat=webp
 
 run-client:
-	cd client && go run main.go -all -save -size=2400
+	cd client && ./client -all -save -size=2400
 
 vegeta:
 	vegeta attack -targets=request.txt -format=http -duration=20s -timeout=60s -rate=2 \

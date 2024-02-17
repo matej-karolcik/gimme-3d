@@ -34,7 +34,6 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /tmp/cmd /app/cmd
-COPY config.toml /app/config.toml
 
 WORKDIR /app
 

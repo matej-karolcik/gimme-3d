@@ -10,7 +10,7 @@ use warp::multipart::FormData;
 
 #[derive(Deserialize, Serialize)]
 pub struct Request {
-    pub model: String,
+    pub model_url: String,
     pub texture_urls: Option<Vec<String>>,
     pub textures: Option<Vec<Vec<u8>>>,
     pub width: u32,
@@ -20,7 +20,7 @@ pub struct Request {
 impl fmt::Debug for Request {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("Request")
-            .field("model", &self.model)
+            .field("model_url", &self.model_url)
             .field("textures (length)", &self.textures.is_some())
             .field("texture_urls (length)", &self.texture_urls.is_some())
             .field("width", &self.width)
@@ -47,8 +47,8 @@ impl Request {
             .try_collect()
             .await?;
 
-        let model = String::from_utf8(fields.get("model")
-            .ok_or(ClientError::MissingField("model".to_string()))?.to_vec())?;
+        let model = String::from_utf8(fields.get("model_url")
+            .ok_or(ClientError::MissingField("model_url".to_string()))?.to_vec())?;
         let width = String::from_utf8(fields.get("width")
             .ok_or(ClientError::MissingField("width".to_string()))?.to_vec())?
             .parse()?;
@@ -62,7 +62,7 @@ impl Request {
             .for_each(|(_, v)| textures.push(v.to_vec()));
 
         Ok(Request {
-            model,
+            model_url: model,
             texture_urls: None,
             textures: Some(textures),
             width,

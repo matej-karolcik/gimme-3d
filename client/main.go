@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bytes"
+	"client/pkg/request"
 	"flag"
 	"fmt"
 	"github.com/h2non/bimg"
@@ -11,12 +11,9 @@ import (
 	_ "image/png"
 	"io"
 	"log"
-	"mime"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -121,7 +118,11 @@ func handle(payload interface{}) {
 
 	modelUrl := payload.(string)
 
-	req, err := createRequest(endpointUrl, modelUrl)
+	req, err := request.Create(
+		endpointUrl, modelUrl, *outputFormat,
+		nil, map[int][]byte{0: imageBytes},
+		*size, *size,
+	)
 	if err != nil {
 		panic(err)
 	}
@@ -159,57 +160,6 @@ func handle(payload interface{}) {
 			panic(err)
 		}
 	}
-}
-
-func createRequest(endpointUrl, modelUrl string) (*http.Request, error) {
-	buf := new(bytes.Buffer)
-	writer := multipart.NewWriter(buf)
-
-	if err := addField(writer, "model", modelUrl); err != nil {
-		return nil, fmt.Errorf("adding model field: %w", err)
-	}
-	if err := addField(writer, "width", strconv.Itoa(*size)); err != nil {
-		return nil, fmt.Errorf("adding width field: %w", err)
-	}
-	if err := addField(writer, "height", strconv.Itoa(*size)); err != nil {
-		return nil, fmt.Errorf("adding height field: %w", err)
-	}
-
-	field, err := writer.CreateFormFile("textures[1]", "canvas.jpg")
-	if err != nil {
-		return nil, fmt.Errorf("creating texture form file: %w", err)
-	}
-
-	reader := bytes.NewReader(imageBytes)
-	if _, err = io.Copy(field, reader); err != nil {
-		return nil, fmt.Errorf("writing texture file: %w", err)
-	}
-
-	if err = writer.Close(); err != nil {
-		return nil, fmt.Errorf("closing writer: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodPost, endpointUrl, buf)
-	if err != nil {
-		return nil, fmt.Errorf("creating request: %w", err)
-	}
-
-	req.Header.Add("Content-Type", writer.FormDataContentType())
-	req.Header.Add("Accept", mime.TypeByExtension("."+*outputFormat))
-
-	return req, nil
-}
-
-func addField(writer *multipart.Writer, name, content string) error {
-	field, err := writer.CreateFormField(name)
-	if err != nil {
-		return fmt.Errorf("creating model form field: %w", err)
-	}
-	if _, err = field.Write([]byte(content)); err != nil {
-		return fmt.Errorf("writing model url: %w", err)
-	}
-
-	return nil
 }
 
 func loadImage(path string) error {

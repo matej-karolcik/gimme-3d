@@ -11,6 +11,7 @@ pub mod fbx2gltf;
 pub mod download;
 pub mod collect;
 pub mod img;
+pub mod model;
 
 
 #[async_trait]

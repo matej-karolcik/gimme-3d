@@ -1,14 +1,12 @@
-use std::path::Path;
-
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result};
 use log::info;
 use nalgebra::Point3;
 use three_d::{Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, RenderTarget, Texture2D, Texture2DRef, vec3};
 use three_d_asset::{Interpolation, radians, TextureData, Viewport, Wrapping};
-use three_d_asset::io::Serialize;
+use three_d_asset::io::{Deserialize, Serialize};
 
+use crate::{img, model};
 use crate::error::Error;
-use crate::img;
 
 pub type RawPixels = Vec<u8>;
 
@@ -20,34 +18,23 @@ pub async fn render_urls(
     height: u32,
     local_model_dir: &String,
 ) -> Result<RawPixels> {
-    let start = std::time::Instant::now();
-
     let texture_futures = textures
         .iter()
         .map(|url| tokio::spawn(img::download_img(url.clone())));
 
-    let final_model_path;
-
-    if let Ok(local_model_path) = get_local_model(local_model_dir, &remote_model_path.clone()) {
-        final_model_path = local_model_path.clone();
-    } else {
-        final_model_path = remote_model_path.clone();
-    }
-
-    let to_load = &[final_model_path.clone()];
-    let loaded_future = three_d_asset::io::load_async(to_load);
-    let mut loaded_assets = loaded_future.await.map_err(|e| Error::AssetLoadingError(e))?;
-
-    info!("Assets load: {:?}", std::time::Instant::now() - start);
     let start = std::time::Instant::now();
 
-    let model_slice = Vec::from(loaded_assets.get(final_model_path.clone().as_str())
+    let (mut loaded_assets, final_model_path) = model::load(&remote_model_path, local_model_dir).await?;
+    let model_vec = Vec::from(loaded_assets.get(final_model_path.clone().as_str())
         .map_err(|e| Error::AssetLoadingError(e))?);
 
-    let gltf = gltf::Gltf::from_slice(model_slice.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
+    let gltf = gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
-    let model = loaded_assets.deserialize(final_model_path.clone().as_str()).context("loading model")?;
+    let model = three_d_asset::Model::deserialize(
+        final_model_path.clone().as_str(),
+        &mut loaded_assets,
+    ).context("loading model")?;
 
     info!("Model load: {:?}", std::time::Instant::now() - start);
     let start = std::time::Instant::now();
@@ -96,26 +83,15 @@ pub async fn render_raw_images(
     info!("Textures load: {:?}", std::time::Instant::now() - start);
     let start = std::time::Instant::now();
 
-    let mut final_model_path = model_path.clone();
-    let mut loaded_assets;
+    let (mut loaded_assets, final_model_path) = model::load(&model_path, local_model_path).await?;
 
-    if let Ok(model_path) = get_local_model(local_model_path, &model_path.clone()) {
-        loaded_assets = three_d_asset::io::load(&[model_path.clone()]).unwrap();
-        final_model_path = model_path.clone();
-    } else {
-        let to_load = vec![model_path.clone()];
-        let loaded_future = three_d_asset::io::load_async(to_load.as_slice());
-
-        loaded_assets = loaded_future.await.map_err(|e| Error::ModelNotFound(e))?;
-    }
-
-    let model_slice = Vec::from(loaded_assets.get(final_model_path.clone())
+    let model_vec = Vec::from(loaded_assets.get(final_model_path.clone())
         .map_err(|e| Error::AssetLoadingError(e))?);
 
-    let gltf = gltf::Gltf::from_slice(model_slice.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
+    let gltf = gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
-    let model = loaded_assets.deserialize(final_model_path.as_str()).context("loading model")?;
+    let model = loaded_assets.deserialize(final_model_path.as_str())?;
 
     info!("Model load: {:?}", std::time::Instant::now() - start);
 
@@ -127,29 +103,6 @@ pub async fn render_raw_images(
         width,
         height,
     )
-}
-
-fn get_local_model(local_dir: &String, path: &String) -> Result<String> {
-    if local_dir.is_empty() || path.is_empty() {
-        return Err(anyhow!("local directory or path is empty"));
-    }
-
-    let local_dir = Path::new(local_dir.as_str());
-    let model_path = Path::new(path.as_str());
-    let filename = model_path.file_name();
-
-    if let None = filename {
-        return Err(anyhow!("no filename found in {}", path));
-    }
-
-    let model_path = local_dir.join(filename.unwrap());
-
-    if !model_path.exists() {
-        return Err(Error::NoLocalModel(model_path.display().to_string()).into());
-    }
-
-
-    Ok(String::from(model_path.to_str().unwrap()))
 }
 
 fn render(
