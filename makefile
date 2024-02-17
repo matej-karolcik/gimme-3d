@@ -8,13 +8,12 @@ upload-gltf:
 
 run-server: build
 	docker run --memory=1024m \
-		--cpus=2 \
+		--cpus=1 \
 		--init \
 		-it --rm \
 		-p 3030:3030 \
 		-v $$(pwd)/config.toml:/app/config.toml \
-		--entrypoint="" \
-		$(image) /bin/sh -c "/app/cmd download && /usr/bin/xvfb-run -a /app/cmd serve"
+		$(image)
 
 build-client:
 	cd client && go build -o client

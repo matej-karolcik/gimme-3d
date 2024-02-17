@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	conc         = flag.Int("conc", 1, "number of concurrent requests")
+	conc         = flag.Int("conc", 10, "number of concurrent requests")
 	numRequests  = flag.Int("n", 1, "number of requests")
 	all          = flag.Bool("all", false, "run all models")
 	save         = flag.Bool("save", false, "save image")
