@@ -10,7 +10,8 @@ use warp::multipart::FormData;
 
 #[derive(Deserialize, Serialize)]
 pub struct Request {
-    pub model_url: String,
+    pub model_url: Option<String>,
+    pub model: Option<Vec<u8>>,
     pub texture_urls: Option<Vec<String>>,
     pub textures: Option<Vec<Vec<u8>>>,
     pub width: u32,
@@ -20,6 +21,7 @@ pub struct Request {
 impl fmt::Debug for Request {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         f.debug_struct("Request")
+            .field("model", &self.model.is_some())
             .field("model_url", &self.model_url)
             .field("textures (length)", &self.textures.is_some())
             .field("texture_urls (length)", &self.texture_urls.is_some())
@@ -47,8 +49,24 @@ impl Request {
             .try_collect()
             .await?;
 
-        let model = String::from_utf8(fields.get("model_url")
-            .ok_or(ClientError::MissingField("model_url".to_string()))?.to_vec())?;
+        let mut model_url: Option<String> = None;
+        let maybe_model_url = fields.get("model_url");
+        if let Some(maybe_model_url) = maybe_model_url {
+            if !maybe_model_url.is_empty() {
+                model_url = Some(String::from_utf8(maybe_model_url.to_vec())?);
+            }
+        }
+        let mut model: Option<Vec<u8>> = None;
+        if let Some(maybe_model) = fields.get("model") {
+            if !maybe_model.is_empty() {
+                model = Some(maybe_model.to_vec());
+            }
+        }
+
+        if model_url.is_none() && model.is_none() {
+            return Err(anyhow::anyhow!("model_url or model field is required"));
+        }
+
         let width = String::from_utf8(fields.get("width")
             .ok_or(ClientError::MissingField("width".to_string()))?.to_vec())?
             .parse()?;
@@ -61,8 +79,10 @@ impl Request {
             .filter(|(k, _)| k.starts_with("texture"))
             .for_each(|(_, v)| textures.push(v.to_vec()));
 
+
         Ok(Request {
-            model_url: model,
+            model,
+            model_url,
             texture_urls: None,
             textures: Some(textures),
             width,

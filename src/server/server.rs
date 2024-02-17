@@ -28,7 +28,7 @@ pub async fn run() {
         let (request, response_tx) = request_rx.recv().await.unwrap();
         if request.has_raw_textures() {
             let pixels = render_raw_images(
-                request.model_url,
+                request.model_url.unwrap(),
                 request.textures.unwrap(),
                 &context,
                 request.width,
@@ -40,7 +40,7 @@ pub async fn run() {
         }
 
         let pixels = render_urls(
-            request.model_url,
+            request.model_url.unwrap(),
             request.texture_urls.unwrap_or_default(),
             &context,
             request.width,
