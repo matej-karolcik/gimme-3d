@@ -15,7 +15,7 @@ use super::{config, logger, request};
 pub async fn run() {
     logger::init();
 
-    let config = config::Config::parse_toml("config.toml".to_string()).unwrap();
+    let config = config::Config::parse_toml("config.toml".to_string()).unwrap_or_default();
     let local_model_dir = config.models.local_model_dir;
 
     let context = HeadlessContext::new().unwrap();

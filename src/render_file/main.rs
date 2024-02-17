@@ -25,7 +25,7 @@ async fn main() {
     //     &context,
     //     &None,
     // ).await;
-    return;
+    // return;
 
 
     let dirs = std::fs::read_dir("glb").unwrap();

@@ -26,6 +26,19 @@ impl Config {
     }
 }
 
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            port: 3030,
+            models: Models {
+                local_model_dir: "models".to_string(),
+                models_base_url: "".to_string(),
+                models: vec![],
+            },
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use anyhow::Result;
