@@ -30,7 +30,8 @@ async fn main() {
         let (request, response_tx) = request_rx.recv().await.unwrap();
         if request.has_raw_textures() {
             let pixels = gimme_3d::render::render_raw_images(
-                request.model_url.unwrap(),
+                request.model_url,
+                request.model,
                 request.textures.unwrap(),
                 &context,
                 request.width,
@@ -42,7 +43,8 @@ async fn main() {
         }
 
         let pixels = gimme_3d::render::render_urls(
-            request.model_url.unwrap(),
+            request.model_url,
+            request.model,
             request.texture_urls.unwrap_or_default(),
             &context,
             request.width,

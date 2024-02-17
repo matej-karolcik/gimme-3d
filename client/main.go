@@ -73,7 +73,8 @@ func run() error {
 
 	if *all {
 		start := time.Now()
-		models, err := os.ReadDir("../glb")
+		glbDir := "../glb"
+		models, err := os.ReadDir(glbDir)
 		if err != nil {
 			return fmt.Errorf("reading glb directory: %w", err)
 		}
@@ -84,9 +85,8 @@ func run() error {
 			}
 			wg.Add(1)
 
-			modelUrl := "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/" + model.Name()
-			if err = pool.Invoke(modelUrl); err != nil {
-				panic(err)
+			if err = pool.Invoke(path.Join(glbDir, model.Name())); err != nil {
+				return fmt.Errorf("invoking pool: %w", err)
 			}
 		}
 
@@ -103,7 +103,7 @@ func run() error {
 		//const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_duvet-cover_1350x2000.glb"
 		const modelUrl = "https://jq-staging-matko.s3.eu-central-1.amazonaws.com/gltf/1_p1_t-shirt.glb"
 		if err = pool.Invoke(modelUrl); err != nil {
-			panic(err)
+			return fmt.Errorf("invoking pool: %w", err)
 		}
 	}
 
@@ -116,11 +116,16 @@ func run() error {
 func handle(payload interface{}) {
 	defer wg.Done()
 
-	modelUrl := payload.(string)
+	modelPath := payload.(string)
+
+	modelBytes, err := os.ReadFile(modelPath)
+	if err != nil {
+		panic(err)
+	}
 
 	req, err := request.Create(
-		endpointUrl, modelUrl, *outputFormat,
-		nil, map[int][]byte{0: imageBytes},
+		endpointUrl, "", *outputFormat,
+		modelBytes, map[int][]byte{0: imageBytes},
 		*size, *size,
 	)
 	if err != nil {
@@ -135,13 +140,13 @@ func handle(payload interface{}) {
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("%-50serror\n", path.Base(modelUrl))
+		fmt.Printf("%-50serror\n", path.Base(modelPath))
 		return
 	}
 
 	lock.Lock()
 	if *all {
-		fmt.Printf("%-50s%s\n", path.Base(modelUrl), time.Since(start))
+		fmt.Printf("%-50s%s\n", path.Base(modelPath), time.Since(start))
 	} else {
 		fmt.Printf("roundtrip time: %s\n", time.Since(start))
 	}
@@ -149,7 +154,7 @@ func handle(payload interface{}) {
 
 	if *save {
 		f, err := os.Create(path.Join(results, path.Base(
-			strings.ReplaceAll(modelUrl, ".glb", "."+*outputFormat))))
+			strings.ReplaceAll(modelPath, ".glb", "."+*outputFormat))))
 		if err != nil {
 			panic(err)
 		}

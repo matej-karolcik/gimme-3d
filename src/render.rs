@@ -11,7 +11,8 @@ use crate::error::Error;
 pub type RawPixels = Vec<u8>;
 
 pub async fn render_urls(
-    remote_model_path: String,
+    remote_model_path: Option<String>,
+    model_bytes: Option<Vec<u8>>,
     textures: Vec<String>,
     context: &three_d::Context,
     width: u32,
@@ -24,7 +25,11 @@ pub async fn render_urls(
 
     let start = std::time::Instant::now();
 
-    let (mut loaded_assets, final_model_path) = model::load(&remote_model_path, local_model_dir).await?;
+    let (mut loaded_assets, final_model_path) = model::load(
+        remote_model_path,
+        local_model_dir,
+        model_bytes,
+    ).await?;
     let model_vec = Vec::from(loaded_assets.get(final_model_path.clone().as_str())
         .map_err(|e| Error::AssetLoadingError(e))?);
 
@@ -62,7 +67,8 @@ pub async fn render_urls(
 }
 
 pub async fn render_raw_images(
-    model_path: String,
+    model_path: Option<String>,
+    model_bytes: Option<Vec<u8>>,
     raw_textures: Vec<Vec<u8>>,
     context: &three_d::Context,
     width: u32,
@@ -83,7 +89,11 @@ pub async fn render_raw_images(
     info!("Textures load: {:?}", std::time::Instant::now() - start);
     let start = std::time::Instant::now();
 
-    let (mut loaded_assets, final_model_path) = model::load(&model_path, local_model_path).await?;
+    let (mut loaded_assets, final_model_path) = model::load(
+        model_path,
+        local_model_path,
+        model_bytes,
+    ).await?;
 
     let model_vec = Vec::from(loaded_assets.get(final_model_path.clone())
         .map_err(|e| Error::AssetLoadingError(e))?);

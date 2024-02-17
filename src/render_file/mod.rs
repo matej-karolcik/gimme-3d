@@ -41,7 +41,8 @@ pub async fn run(
     let textures = vec![texture];
 
     let maybe_pixels = crate::render::render_urls(
-        String::from(model_path),
+        Some(String::from(model_path)),
+        None,
         textures,
         &context,
         width * factor,
