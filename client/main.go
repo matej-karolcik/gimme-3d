@@ -1,9 +1,9 @@
 package main
 
 import (
-	"client/pkg/request"
 	"flag"
 	"fmt"
+	"github.com/gustofarbi/gimme-3d/client/request"
 	"github.com/h2non/bimg"
 	_ "github.com/kolesa-team/go-webp/decoder"
 	"github.com/panjf2000/ants/v2"
@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	conc         = flag.Int("conc", 10, "number of concurrent requests")
+	conc         = flag.Int("conc", 1, "number of concurrent requests")
 	numRequests  = flag.Int("n", 1, "number of requests")
 	all          = flag.Bool("all", false, "run all models")
 	save         = flag.Bool("save", false, "save image")
@@ -176,10 +176,11 @@ func loadImage(path string) error {
 		_ = f.Close()
 	}()
 
-	imageBytes, err = bimg.Read(path)
+	imageBytes, err = os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("decoding image: %w", err)
 	}
+
 	im := bimg.NewImage(imageBytes)
 
 	b, err := im.Thumbnail(*size)

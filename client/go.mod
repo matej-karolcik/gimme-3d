@@ -1,4 +1,4 @@
-module client
+module github.com/gustofarbi/gimme-3d/client
 
 go 1.22
 

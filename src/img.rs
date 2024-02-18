@@ -1,17 +1,10 @@
-use std::io::Cursor;
-
 use image::DynamicImage;
-use image::io::Reader;
 use three_d_asset::{Texture2D, TextureData};
 
 use crate::error::Error;
 
 pub fn decode_img(bytes: &[u8]) -> anyhow::Result<Texture2D> {
-    let reader = Reader::new(Cursor::new(bytes))
-        .with_guessed_format()
-        .expect("Cursor io never fails");
-
-    let img: DynamicImage = reader.decode()?;
+    let img = image::load_from_memory(bytes)?;
 
     let width = img.width();
     let height = img.height();

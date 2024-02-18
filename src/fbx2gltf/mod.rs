@@ -58,7 +58,7 @@ pub fn convert(input: &String, output: &String, binary: bool) -> anyhow::Result<
 
     let output_path = Path::new(output);
     if !output_path.exists() {
-        std::fs::create_dir_all(output_path).with_context(|| format!("failed to create directory {}", output))?;
+        std::fs::create_dir_all(output_path).context(format!("failed to create directory {}", output))?;
     }
 
     if input_path.is_dir() {
