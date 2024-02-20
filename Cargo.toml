@@ -51,3 +51,6 @@ url = "2.5.0"
 async-trait = { version = "0.1.77", features = [] }
 indicatif = "0.17.7"
 imageproc = "0.23.0"
+prometheus = "0.13.3"
+lazy_static = "1.4.0"
+scopeguard = "1.2.0"
