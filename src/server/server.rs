@@ -147,7 +147,7 @@ fn respond(
     width: u32,
     height: u32,
 ) -> Result<Response, warp::Rejection> {
-    let result = if pixels.width() == width || pixels.height() == height {
+    let result = if pixels.width() == width && pixels.height() == height {
         pixels
     } else {
         image::imageops::thumbnail(&pixels, width, height).into()
