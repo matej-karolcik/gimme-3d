@@ -2,6 +2,7 @@ use std::fmt::{Debug, Formatter};
 use std::sync::Arc;
 
 use anyhow::Result;
+use image::DynamicImage;
 use three_d::HeadlessContext;
 use tokio::sync::{mpsc, oneshot, Semaphore};
 use warp::Filter;
@@ -12,6 +13,8 @@ use crate::render::*;
 
 use super::{config, logger, request};
 
+type ResultChannel = oneshot::Sender<Result<DynamicImage>>;
+
 pub async fn run() {
     logger::init();
 
@@ -20,7 +23,7 @@ pub async fn run() {
 
     let context = HeadlessContext::new().unwrap();
 
-    let (request_tx, mut request_rx) = mpsc::channel::<(request::Request, oneshot::Sender<Result<RawPixels>>)>(10);
+    let (request_tx, mut request_rx) = mpsc::channel::<(request::Request, ResultChannel)>(10);
 
     tokio::spawn(async move { serve(config.port, request_tx).await; });
 
@@ -32,8 +35,8 @@ pub async fn run() {
                 request.model,
                 request.textures.unwrap(),
                 &context,
-                request.width,
-                request.height,
+                request.width * config.upscale_factor,
+                request.height * config.upscale_factor,
                 &local_model_dir,
             ).await;
             let _ = response_tx.send(pixels);
@@ -45,8 +48,8 @@ pub async fn run() {
             request.model,
             request.texture_urls.unwrap_or_default(),
             &context,
-            request.width,
-            request.height,
+            request.width * config.upscale_factor,
+            request.height * config.upscale_factor,
             &local_model_dir,
         ).await;
         let _ = response_tx.send(pixels);
@@ -55,7 +58,7 @@ pub async fn run() {
 
 async fn serve(
     port: u16,
-    request_tx: mpsc::Sender<(request::Request, oneshot::Sender<Result<RawPixels>>)>,
+    request_tx: mpsc::Sender<(request::Request, ResultChannel)>,
 ) {
     let semaphore = Arc::new(Semaphore::new(1));
     let semaphore_clone = semaphore.clone();
@@ -66,7 +69,7 @@ async fn serve(
         .and(warp::header::optional("accept"))
         .and(warp::any().map(move || semaphore_clone.clone()))
         .and(warp::any().map(move || request_tx_clone.clone()))
-        .and_then(|form: FormData, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, oneshot::Sender<Result<RawPixels>>)>|
+        .and_then(|form: FormData, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, ResultChannel)>|
             async move {
                 let start = std::time::Instant::now();
 
@@ -80,6 +83,10 @@ async fn serve(
                 let permit = sem.acquire_owned().await.unwrap();
 
                 let (response_tx, response_rx) = oneshot::channel();
+
+                let width = r.width;
+                let height = r.height;
+
                 request_tx.try_send((r, response_tx)).unwrap();
                 let pixels = match response_rx.await.unwrap() {
                     Ok(content) => content,
@@ -94,7 +101,7 @@ async fn serve(
 
                 log::info!("Time overall: {:?}", start.elapsed());
 
-                respond(accept_header, pixels, start)
+                respond(accept_header, pixels, start, width, height)
             });
 
     let render = warp::post()
@@ -103,18 +110,22 @@ async fn serve(
         .and(warp::header::optional("accept"))
         .and(warp::any().map(move || semaphore.clone()))
         .and(warp::any().map(move || request_tx.clone()))
-        .and_then(move |r: request::Request, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, oneshot::Sender<Result<RawPixels>>)>| {
+        .and_then(move |r: request::Request, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, ResultChannel)>| {
             async move {
                 let start = std::time::Instant::now();
                 let permit = sem.acquire_owned().await.unwrap();
 
                 let (response_tx, response_rx) = oneshot::channel();
+
+                let width = r.width;
+                let height = r.height;
+
                 request_tx.try_send((r, response_tx)).unwrap();
                 let pixels = response_rx.await.unwrap().unwrap();
 
                 drop(permit);
 
-                respond(accept_header, pixels, start)
+                respond(accept_header, pixels, start, width, height)
             }
         });
 
@@ -129,13 +140,25 @@ async fn serve(
         .await;
 }
 
-fn respond(accept_header: Option<String>, pixels: RawPixels, start: std::time::Instant) -> Result<Response, warp::Rejection> {
+fn respond(
+    accept_header: Option<String>,
+    pixels: DynamicImage,
+    start: std::time::Instant,
+    width: u32,
+    height: u32,
+) -> Result<Response, warp::Rejection> {
+    let result = if pixels.width() == width || pixels.height() == height {
+        pixels
+    } else {
+        image::imageops::thumbnail(&pixels, width, height).into()
+    };
+
     if let Some(mime) = accept_header {
         if mime.contains("image/webp") {
             let start = std::time::Instant::now();
-            let img = image::load_from_memory(&pixels).unwrap();
+            // let img = image::load_from_memory(&pixels).unwrap();
             let mut writer = std::io::Cursor::new(Vec::new());
-            img.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
+            result.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
 
             log::info!("Time webp: {:?}", start.elapsed());
             log::info!("Time overall: {:?}", start.elapsed());
@@ -148,11 +171,14 @@ fn respond(accept_header: Option<String>, pixels: RawPixels, start: std::time::I
         }
     }
 
+    let mut writer = std::io::Cursor::new(Vec::new());
+    result.write_to(&mut writer, image::ImageOutputFormat::Png).unwrap();
+
     log::info!("Time overall: {:?}", start.elapsed());
 
     Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
         .header("Content-Type", "image/png")
-        .body(pixels.into())
+        .body(writer.into_inner().into())
         .unwrap())
 }
 

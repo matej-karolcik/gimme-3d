@@ -1,4 +1,5 @@
 port = 3030
+upscale_factor = 2
 
 [models]
 models_base_url = 'https://foobar.com/gltf/'

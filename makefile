@@ -7,8 +7,8 @@ upload-gltf:
 	aws s3 cp ./glb/ s3://jq-staging-matko/gltf/ --recursive --profile jq-staging-sysops
 
 run-server: build
-	docker run --memory=1024m \
-		--cpus=1 \
+	docker run --memory=2048m \
+		--cpus=2 \
 		--init \
 		-it --rm \
 		-p 3030:3030 \
@@ -19,10 +19,10 @@ build-client:
 	cd client && go build
 
 run-client-webp:
-	cd client && ./gimme-3d-client -all -save -size=2000 -iformat=webp -oformat=webp
+	cd client && ./client -all -save -size=2000 -iformat=webp -oformat=webp
 
 run-client:
-	cd client && ./gimme-3d-client -all -save -size=2400
+	cd client && ./client -all -save -size=2400
 
 vegeta:
 	vegeta attack -targets=request.txt -format=http -duration=20s -timeout=60s -rate=2 \

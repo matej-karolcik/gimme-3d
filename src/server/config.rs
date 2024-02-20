@@ -4,6 +4,7 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct Config {
     pub port: u16,
+    pub upscale_factor: u32, // todo should this be f32?
     pub models: Models,
 }
 
@@ -30,6 +31,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             port: 3030,
+            upscale_factor: 1,
             models: Models {
                 local_model_dir: "models".to_string(),
                 models_base_url: "".to_string(),
@@ -50,6 +52,7 @@ mod tests {
         let config = Config::parse_toml("config.test.toml".to_string())?;
 
         assert_eq!(config.port, 3030);
+        assert_eq!(config.upscale_factor, 2);
         assert_eq!(config.models.local_model_dir, "/var/models/");
         assert_eq!(config.models.models_base_url, "https://foobar.com/gltf/");
         assert_eq!(config.models.models.len(), 2);

@@ -111,10 +111,8 @@ async fn run(
         &String::new(),
     ).await?;
 
-    let texture = image::load_from_memory(&pixels)?;
-
     let texture: DynamicImage = image::imageops::resize(
-        &texture,
+        &pixels,
         mask.width(),
         mask.height(),
         image::imageops::FilterType::Triangle,

@@ -1,14 +1,13 @@
 use anyhow::{Context, Result};
+use image::{DynamicImage, ImageBuffer, Rgba};
 use log::info;
 use nalgebra::Point3;
 use three_d::{Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, RenderTarget, Texture2D, Texture2DRef, vec3};
-use three_d_asset::{Interpolation, radians, TextureData, Viewport, Wrapping};
-use three_d_asset::io::{Deserialize, Serialize};
+use three_d_asset::{Interpolation, radians, Viewport, Wrapping};
+use three_d_asset::io::{Deserialize};
 
 use crate::{img, model};
 use crate::error::Error;
-
-pub type RawPixels = Vec<u8>;
 
 pub async fn render_urls(
     remote_model_path: Option<String>,
@@ -18,7 +17,7 @@ pub async fn render_urls(
     width: u32,
     height: u32,
     local_model_dir: &String,
-) -> Result<RawPixels> {
+) -> Result<DynamicImage> {
     let texture_futures = textures
         .iter()
         .map(|url| tokio::spawn(img::download_img(url.clone())));
@@ -74,7 +73,7 @@ pub async fn render_raw_images(
     width: u32,
     height: u32,
     local_model_path: &String,
-) -> Result<RawPixels> {
+) -> Result<DynamicImage> {
     let start = std::time::Instant::now();
 
     let cpu_textures = raw_textures
@@ -122,7 +121,7 @@ fn render(
     doc: gltf::Document,
     width: u32,
     height: u32,
-) -> Result<RawPixels> {
+) -> Result<DynamicImage> {
     let start = std::time::Instant::now();
 
     let scene = doc.default_scene().ok_or(Error::NoDefaultScene)?;
@@ -153,8 +152,10 @@ fn render(
 
     let camera_transform = camera_props.parent_transform * camera_props.transform;
     let point = camera_transform.position();
-    let at = camera_transform.rotation().transform_point(&Point3::new(0.0, 0.0, -1.0));
-    let up = camera_transform.rotation().transform_point(&Point3::new(0.0, 1.0, 0.0));
+
+    let camera_rotation = camera_transform.rotation();
+    let at = camera_rotation.transform_point(&Point3::new(0.0, 0.0, -1.0));
+    let up = camera_rotation.transform_point(&Point3::new(0.0, 1.0, 0.0));
 
     let viewport = Viewport::new_at_origo(width, height);
     const FACTOR: f32 = 100.;
@@ -190,7 +191,7 @@ fn render(
         Wrapping::ClampToEdge,
     );
 
-    let pixels = RenderTarget::new(
+    let pixels: Vec<[u8; 4]> = RenderTarget::new(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
@@ -198,18 +199,16 @@ fn render(
         .render(&camera, &mesh, &[])
         .read_color();
 
-    let result = CpuTexture {
-        data: TextureData::RgbaU8(pixels.clone()),
-        width: texture.width(),
-        height: texture.height(),
-        ..Default::default()
-    }
-        .serialize("result.png")
-        .unwrap()
-        .remove("result.png")
-        .unwrap();
+    let img = DynamicImage::ImageRgba8(
+        ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(
+            viewport.width,
+            viewport.height,
+            pixels.iter().flat_map(|v| *v).collect::<Vec<_>>(),
+        )
+            .unwrap(),
+    );
 
     info!("Time render: {:?}", std::time::Instant::now() - start);
 
-    Ok(result)
+    Ok(img)
 }

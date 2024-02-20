@@ -57,9 +57,8 @@ pub async fn run(
 
     let pixels = maybe_pixels.unwrap();
 
-    let img = image::load_from_memory(&pixels).unwrap();
     let img: DynamicImage = image::imageops::resize(
-        &img,
+        &pixels,
         width,
         height,
         image::imageops::FilterType::Lanczos3,
