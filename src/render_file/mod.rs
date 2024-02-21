@@ -13,7 +13,7 @@ pub async fn run_multiple(
     for file in files {
         let entry = file.unwrap();
         let path = entry.path();
-        run(path.to_str().unwrap(), results, &context, texture_url).await;
+        run(path.to_str().unwrap(), results, context, texture_url).await;
     }
 }
 
@@ -44,7 +44,7 @@ pub async fn run(
         Some(String::from(model_path)),
         None,
         textures,
-        &context,
+        context,
         width * factor,
         height * factor,
         &String::new(),

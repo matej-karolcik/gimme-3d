@@ -103,7 +103,7 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
         ),
         None,
         vec![texture_bytes],
-        &context,
+        context,
         mask.width() * UPSCALE,
         mask.height() * UPSCALE,
         &String::new(),
@@ -155,7 +155,7 @@ fn multiply(bottom: &DynamicImage, top_raw: &DynamicImage) -> DynamicImage {
             let pixel2 = top.get_pixel(x, y);
 
             let mut result = vec![];
-            (0..3).into_iter().for_each(|i| {
+            (0..3).for_each(|i| {
                 let ch1 = pixel1[i] as f32 / 255.;
                 let ch2 = pixel2[i] as f32 / 255.;
 

@@ -19,7 +19,11 @@ impl crate::Subcommand for Collect {
     async fn run(&self, matches: &ArgMatches) -> Result<()> {
         let input_dir = matches.get_one::<String>("input-dir").unwrap();
 
-        async { Ok(collect_models(input_dir)) }.await
+        async {
+            collect_models(input_dir);
+            Ok(())
+        }
+        .await
     }
 }
 
@@ -36,9 +40,7 @@ fn collect_models(input_dir: &String) {
 
             let path = file.path();
 
-            if path.extension().is_none() {
-                return None;
-            }
+            path.extension()?;
 
             let extension = path.extension()?;
             if extension != "glb" {

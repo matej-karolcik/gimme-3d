@@ -91,7 +91,7 @@ fn get_local_model(local_dir: &String, path: &String) -> Result<String> {
     let model_path = Path::new(path.as_str());
     let filename = model_path.file_name();
 
-    if let None = filename {
+    if filename.is_none() {
         return Err(anyhow!("no filename found in {}", path));
     }
 

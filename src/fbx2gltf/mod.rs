@@ -43,7 +43,7 @@ impl crate::Subcommand for Fbx2Gltf {
         let output = matches.get_one::<String>("output").unwrap();
         let binary = matches.get_flag("binary");
 
-        convert(&input, &output, binary)?;
+        convert(input, output, binary)?;
 
         std::future::ready(Ok(())).await
     }
@@ -75,12 +75,12 @@ pub fn convert(input: &String, output: &String, binary: bool) -> anyhow::Result<
                 }
             })
             .for_each(|path| {
-                convert_file(&path, Some(&output_path), binary)
+                convert_file(&path, Some(output_path), binary)
                     .map_err(|e| anyhow!("failed to convert file {}: {}", path.display(), e))
                     .unwrap();
             });
     } else {
-        convert_file(input_path, Some(&output_path), binary)?;
+        convert_file(input_path, Some(output_path), binary)?;
     }
 
     Ok(())
@@ -103,7 +103,7 @@ fn convert_file(
 
     if let Some(output_path) = output_path {
         let result_path = output_path.join(input_path.file_stem().unwrap());
-        cmd.args(&["-o", result_path.to_str().unwrap()]);
+        cmd.args(["-o", result_path.to_str().unwrap()]);
     }
 
     println!("running: {:?}", cmd);

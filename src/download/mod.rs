@@ -41,7 +41,7 @@ async fn download_models(
     models: Vec<String>,
     output_dir: String,
 ) -> Result<()> {
-    if !base_url.ends_with("/") {
+    if !base_url.ends_with('/') {
         base_url.push('/');
     }
     let base = Url::parse(base_url.as_str())?;

@@ -18,7 +18,7 @@ pub struct Models {
 impl Config {
     pub fn parse_toml(path: String) -> Result<Self> {
         let config_file = std::fs::read_to_string(path)?;
-        Ok(Self::parse(config_file)?)
+        Self::parse(config_file)
     }
 
     fn parse(config: String) -> Result<Self> {

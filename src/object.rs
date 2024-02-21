@@ -113,12 +113,12 @@ impl From<Mat4> for Transform {
     }
 }
 
-impl Into<Mat4> for Transform {
-    fn into(self) -> Mat4 {
-        let x = self.matrix.column(0);
-        let y = self.matrix.column(1);
-        let z = self.matrix.column(2);
-        let w = self.matrix.column(3);
+impl From<Transform> for Mat4 {
+    fn from(val: Transform) -> Self {
+        let x = val.matrix.column(0);
+        let y = val.matrix.column(1);
+        let z = val.matrix.column(2);
+        let w = val.matrix.column(3);
 
         Mat4::from_cols(
             Vector4::new(x.x, x.y, x.z, x.w),
@@ -164,6 +164,6 @@ mod tests {
         assert!(float_eq(0.0, 0.0));
         assert!(float_eq(0.0001, 0.0001));
         assert!(float_eq(-3.0, -3.0));
-        assert_eq!(float_eq(0.0001, 0.0002), false);
+        assert!(!float_eq(0.0001, 0.0002));
     }
 }

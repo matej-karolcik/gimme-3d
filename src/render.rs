@@ -32,11 +32,10 @@ pub async fn render_urls(
     let model_vec = Vec::from(
         loaded_assets
             .get(final_model_path.clone().as_str())
-            .map_err(|e| Error::AssetLoadingError(e))?,
+            .map_err(Error::AssetLoadingError)?,
     );
 
-    let gltf =
-        gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
+    let gltf = gltf::Gltf::from_slice(model_vec.as_slice()).map_err(Error::GltfParsingError)?;
     let doc = gltf.document;
 
     let model =
@@ -58,7 +57,7 @@ pub async fn render_urls(
 
     info!("Textures load: {:?}", std::time::Instant::now() - start);
 
-    render(&context, model, cpu_textures, doc, width, height)
+    render(context, model, cpu_textures, doc, width, height)
 }
 
 pub async fn render_raw_images(
@@ -90,18 +89,17 @@ pub async fn render_raw_images(
     let model_vec = Vec::from(
         loaded_assets
             .get(final_model_path.clone())
-            .map_err(|e| Error::AssetLoadingError(e))?,
+            .map_err(Error::AssetLoadingError)?,
     );
 
-    let gltf =
-        gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
+    let gltf = gltf::Gltf::from_slice(model_vec.as_slice()).map_err(Error::GltfParsingError)?;
     let doc = gltf.document;
 
     let model = loaded_assets.deserialize(final_model_path.as_str())?;
 
     info!("Model load: {:?}", std::time::Instant::now() - start);
 
-    render(&context, model, cpu_textures, doc, width, height)
+    render(context, model, cpu_textures, doc, width, height)
 }
 
 fn render(
@@ -123,7 +121,7 @@ fn render(
         return Err(Error::NoMesh.into());
     }
 
-    let mut mesh = Model::<ColorMaterial>::new(&context, &model).context("creating mesh")?;
+    let mut mesh = Model::<ColorMaterial>::new(context, &model).context("creating mesh")?;
     let num_textures = cpu_textures.len();
 
     let mut textures: Vec<&three_d_asset::Texture2D> = vec![];
@@ -134,7 +132,7 @@ fn render(
 
     mesh.iter_mut().enumerate().for_each(|(pos, m)| {
         m.material.texture = Some(Texture2DRef::from_cpu_texture(
-            &context,
+            context,
             &cpu_textures[pos % num_textures],
         ));
         m.material.is_transparent = true;
@@ -165,7 +163,7 @@ fn render(
     );
 
     let mut texture = Texture2D::new_empty::<[u8; 4]>(
-        &context,
+        context,
         viewport.width,
         viewport.height,
         Interpolation::Nearest,
@@ -176,7 +174,7 @@ fn render(
     );
 
     let mut depth_texture = DepthTexture2D::new::<f32>(
-        &context,
+        context,
         viewport.width,
         viewport.height,
         Wrapping::ClampToEdge,

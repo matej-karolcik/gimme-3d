@@ -16,7 +16,7 @@ pub fn extract<T: Clone>(scene: &Scene, parse_fn: fn(&Node, Transform) -> Option
 
         let objects = visit_nodes(node.children(), carry, parse_fn, true);
         if !objects.is_empty() {
-            return objects.get(0).cloned();
+            return objects.first().cloned();
         }
     }
 
@@ -63,7 +63,7 @@ pub fn get_camera(node: &Node, carry: Transform) -> Option<object::Camera> {
 }
 
 pub fn get_mesh(node: &Node, carry: Transform) -> Option<object::Mesh> {
-    if let Some(_) = node.mesh() {
+    if node.mesh().is_some() {
         return Some(object::Mesh {
             parent_transform: carry,
             transform: object::Transform::from(node.transform()),
