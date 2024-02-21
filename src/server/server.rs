@@ -156,7 +156,6 @@ fn respond(
     if let Some(mime) = accept_header {
         if mime.contains("image/webp") {
             let start = std::time::Instant::now();
-            // let img = image::load_from_memory(&pixels).unwrap();
             let mut writer = std::io::Cursor::new(Vec::new());
             result.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
 

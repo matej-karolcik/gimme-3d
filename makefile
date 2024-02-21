@@ -7,8 +7,8 @@ upload-gltf:
 	aws s3 cp ./glb/ s3://jq-staging-matko/gltf/ --recursive --profile jq-staging-sysops
 
 run-server: build
-	docker run --memory=2048m \
-		--cpus=2 \
+	docker run --memory=1024m \
+		--cpus=1 \
 		--init \
 		-it --rm \
 		-p 3030:3030 \

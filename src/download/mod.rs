@@ -27,7 +27,7 @@ impl crate::Subcommand for Download {
     async fn run(&self, matches: &ArgMatches) -> Result<()> {
         let config_path = matches.get_one::<String>("config").unwrap();
         let config = server::config::Config::parse_toml(config_path.to_string()).unwrap();
-        models(
+        download_models(
             config.models.models_base_url,
             config.models.models,
             config.models.local_model_dir,
@@ -35,13 +35,13 @@ impl crate::Subcommand for Download {
     }
 }
 
-pub async fn models(
+async fn download_models(
     mut base_url: String,
     models: Vec<String>,
     output_dir: String,
 ) -> Result<()> {
     if !base_url.ends_with("/") {
-        base_url = format!("{}/", base_url);
+        base_url.push('/');
     }
     let base = Url::parse(base_url.as_str())?;
     let output = Path::new(output_dir.as_str());
@@ -58,7 +58,7 @@ pub async fn models(
             let url = base.join(model.as_str()).unwrap();
             let output = output.join(model.as_str()).to_owned();
             async {
-                download(url, output, &pb).await.unwrap();
+                download(url, output).await.unwrap();
                 pb.clone().inc(1);
             }
         })
@@ -69,20 +69,13 @@ pub async fn models(
     Ok(())
 }
 
-async fn download(url: Url, output: PathBuf, pb: &ProgressBar) -> Result<()> {
-    let start = std::time::Instant::now();
+async fn download(url: Url, output: PathBuf) -> Result<()> {
     let mut response = reqwest::get(url).await?;
     let mut file = std::fs::File::create(output.clone())?;
 
     while let Some(chunk) = response.chunk().await? {
         file.write_all(&chunk)?;
     }
-
-    pb.set_message(format!(
-        "Downloaded {} in {}ms",
-        output.to_str().unwrap(),
-        start.elapsed().as_millis()
-    ));
 
     Ok(())
 }

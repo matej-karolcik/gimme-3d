@@ -57,7 +57,7 @@ pub(crate) async fn load(
 
 pub async fn download(url: String) -> Result<Vec<u8>> {
     if !url.starts_with("http") {
-        return Err(anyhow!("url does not start with http"));
+        return std::fs::read(url).map_err(|e| e.into());
     }
 
     let response = reqwest::get(url).await?;

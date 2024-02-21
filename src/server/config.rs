@@ -4,7 +4,7 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct Config {
     pub port: u16,
-    pub upscale_factor: u32, // todo should this be f32?
+    pub upscale_factor: u32,
     pub models: Models,
 }
 
