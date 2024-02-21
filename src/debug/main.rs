@@ -43,11 +43,7 @@ async fn main() {
     // return;
 
     for mask in mask_files {
-        let result = run(
-            &context,
-            mask,
-            canvas.to_string(),
-        ).await;
+        let result = run(&context, mask, canvas.to_string()).await;
         if let Err(e) = result {
             println!("Error: {}", e);
         }
@@ -71,11 +67,7 @@ fn walk_directory(dir: String) -> Vec<String> {
     result
 }
 
-async fn run(
-    context: &HeadlessContext,
-    mask: String,
-    canvas: String,
-) -> Result<()> {
+async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<()> {
     let start = std::time::Instant::now();
 
     let model_file = PathBuf::from(&mask)
@@ -87,13 +79,13 @@ async fn run(
         .unwrap();
 
     if !model_file.starts_with("00_s") {
-        return Err(anyhow!(format!("model file name must start with 00_s: {}", model_file)));
+        return Err(anyhow!(format!(
+            "model file name must start with 00_s: {}",
+            model_file
+        )));
     }
 
-    let model_file = model_file
-        .strip_prefix("00_s")
-        .unwrap()
-        .to_string();
+    let model_file = model_file.strip_prefix("00_s").unwrap().to_string();
 
     println!("mask: {}", mask);
     let mask = image::open(mask).unwrap();
@@ -102,28 +94,38 @@ async fn run(
     const UPSCALE: u32 = 2;
 
     let pixels = gimme_3d::render::render_raw_images(
-        Some(Path::new("glb").join(model_file.clone()).to_str().unwrap().to_string()),
+        Some(
+            Path::new("glb")
+                .join(model_file.clone())
+                .to_str()
+                .unwrap()
+                .to_string(),
+        ),
         None,
         vec![texture_bytes],
         &context,
         mask.width() * UPSCALE,
         mask.height() * UPSCALE,
         &String::new(),
-    ).await?;
+    )
+    .await?;
 
     let texture: DynamicImage = image::imageops::resize(
         &pixels,
         mask.width(),
         mask.height(),
         image::imageops::FilterType::Triangle,
-    ).into();
+    )
+    .into();
     texture.save(Path::new("textures").join(Path::new(&model_file).with_extension("png")))?;
 
     let result = multiply(&mask, &texture);
 
-    let mut writer = std::fs::File::create(Path::new("results")
-        .join(Path::new(&model_file).file_name().unwrap())
-        .with_extension("webp"))?;
+    let mut writer = std::fs::File::create(
+        Path::new("results")
+            .join(Path::new(&model_file).file_name().unwrap())
+            .with_extension("webp"),
+    )?;
 
     result.write_to(&mut writer, image::ImageOutputFormat::WebP)?;
 
@@ -136,7 +138,11 @@ async fn run(
 fn multiply(bottom: &DynamicImage, top_raw: &DynamicImage) -> DynamicImage {
     let top;
     if top_raw.dimensions() != bottom.dimensions() {
-        top = top_raw.resize(bottom.width(), bottom.height(), image::imageops::FilterType::Lanczos3);
+        top = top_raw.resize(
+            bottom.width(),
+            bottom.height(),
+            image::imageops::FilterType::Lanczos3,
+        );
     } else {
         top = top_raw.clone();
     }

@@ -2,8 +2,8 @@ pub use server::run;
 
 pub use crate::render;
 
-pub mod server;
 pub mod config;
+mod logger;
 pub mod metrics;
 mod request;
-mod logger;
+pub mod server;

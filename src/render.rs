@@ -2,12 +2,15 @@ use anyhow::{Context, Result};
 use image::{DynamicImage, ImageBuffer, Rgba};
 use log::info;
 use nalgebra::Point3;
-use three_d::{Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model, RenderTarget, Texture2D, Texture2DRef, vec3};
-use three_d_asset::{Interpolation, radians, Viewport, Wrapping};
-use three_d_asset::io::{Deserialize};
+use three_d::{
+    vec3, Blend, Camera, ClearState, ColorMaterial, CpuTexture, Cull, DepthTexture2D, Model,
+    RenderTarget, Texture2D, Texture2DRef,
+};
+use three_d_asset::io::Deserialize;
+use three_d_asset::{radians, Interpolation, Viewport, Wrapping};
 
-use crate::{img, model};
 use crate::error::Error;
+use crate::{img, model};
 
 pub async fn render_urls(
     remote_model_path: Option<String>,
@@ -24,21 +27,21 @@ pub async fn render_urls(
 
     let start = std::time::Instant::now();
 
-    let (mut loaded_assets, final_model_path) = model::load(
-        remote_model_path,
-        local_model_dir,
-        model_bytes,
-    ).await?;
-    let model_vec = Vec::from(loaded_assets.get(final_model_path.clone().as_str())
-        .map_err(|e| Error::AssetLoadingError(e))?);
+    let (mut loaded_assets, final_model_path) =
+        model::load(remote_model_path, local_model_dir, model_bytes).await?;
+    let model_vec = Vec::from(
+        loaded_assets
+            .get(final_model_path.clone().as_str())
+            .map_err(|e| Error::AssetLoadingError(e))?,
+    );
 
-    let gltf = gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
+    let gltf =
+        gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
-    let model = three_d_asset::Model::deserialize(
-        final_model_path.clone().as_str(),
-        &mut loaded_assets,
-    ).context("loading model")?;
+    let model =
+        three_d_asset::Model::deserialize(final_model_path.clone().as_str(), &mut loaded_assets)
+            .context("loading model")?;
 
     info!("Model load: {:?}", std::time::Instant::now() - start);
     let start = std::time::Instant::now();
@@ -55,14 +58,7 @@ pub async fn render_urls(
 
     info!("Textures load: {:?}", std::time::Instant::now() - start);
 
-    render(
-        &context,
-        model,
-        cpu_textures,
-        doc,
-        width,
-        height,
-    )
+    render(&context, model, cpu_textures, doc, width, height)
 }
 
 pub async fn render_raw_images(
@@ -88,30 +84,24 @@ pub async fn render_raw_images(
     info!("Textures load: {:?}", std::time::Instant::now() - start);
     let start = std::time::Instant::now();
 
-    let (mut loaded_assets, final_model_path) = model::load(
-        model_path,
-        local_model_path,
-        model_bytes,
-    ).await?;
+    let (mut loaded_assets, final_model_path) =
+        model::load(model_path, local_model_path, model_bytes).await?;
 
-    let model_vec = Vec::from(loaded_assets.get(final_model_path.clone())
-        .map_err(|e| Error::AssetLoadingError(e))?);
+    let model_vec = Vec::from(
+        loaded_assets
+            .get(final_model_path.clone())
+            .map_err(|e| Error::AssetLoadingError(e))?,
+    );
 
-    let gltf = gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
+    let gltf =
+        gltf::Gltf::from_slice(model_vec.as_slice()).map_err(|e| Error::GltfParsingError(e))?;
     let doc = gltf.document;
 
     let model = loaded_assets.deserialize(final_model_path.as_str())?;
 
     info!("Model load: {:?}", std::time::Instant::now() - start);
 
-    render(
-        &context,
-        model,
-        cpu_textures,
-        doc,
-        width,
-        height,
-    )
+    render(&context, model, cpu_textures, doc, width, height)
 }
 
 fn render(
@@ -125,7 +115,8 @@ fn render(
     let start = std::time::Instant::now();
 
     let scene = doc.default_scene().ok_or(Error::NoDefaultScene)?;
-    let camera_props = crate::gltf::extract(&scene, crate::gltf::get_camera).ok_or(Error::NoCamera)?;
+    let camera_props =
+        crate::gltf::extract(&scene, crate::gltf::get_camera).ok_or(Error::NoCamera)?;
     let mesh_props = crate::gltf::extract_all(&scene, crate::gltf::get_mesh);
 
     if mesh_props.is_empty() {
@@ -141,14 +132,15 @@ fn render(
         textures.push(texture);
     }
 
-    mesh.iter_mut()
-        .enumerate()
-        .for_each(|(pos, m)| {
-            m.material.texture = Some(Texture2DRef::from_cpu_texture(&context, &cpu_textures[pos % num_textures]));
-            m.material.is_transparent = true;
-            m.material.render_states.cull = Cull::None;
-            m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;
-        });
+    mesh.iter_mut().enumerate().for_each(|(pos, m)| {
+        m.material.texture = Some(Texture2DRef::from_cpu_texture(
+            &context,
+            &cpu_textures[pos % num_textures],
+        ));
+        m.material.is_transparent = true;
+        m.material.render_states.cull = Cull::None;
+        m.material.render_states.blend = Blend::STANDARD_TRANSPARENCY;
+    });
 
     let camera_transform = camera_props.parent_transform * camera_props.transform;
     let point = camera_transform.position();
@@ -195,9 +187,9 @@ fn render(
         texture.as_color_target(None),
         depth_texture.as_depth_target(),
     )
-        .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0))
-        .render(&camera, &mesh, &[])
-        .read_color();
+    .clear(ClearState::color_and_depth(0.0, 0.0, 0.0, 0.0, 1.0))
+    .render(&camera, &mesh, &[])
+    .read_color();
 
     let img = DynamicImage::ImageRgba8(
         ImageBuffer::<Rgba<u8>, Vec<u8>>::from_raw(
@@ -205,7 +197,7 @@ fn render(
             viewport.height,
             pixels.iter().flat_map(|v| *v).collect::<Vec<_>>(),
         )
-            .unwrap(),
+        .unwrap(),
     );
 
     info!("Time render: {:?}", std::time::Instant::now() - start);

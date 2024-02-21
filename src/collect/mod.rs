@@ -19,9 +19,7 @@ impl crate::Subcommand for Collect {
     async fn run(&self, matches: &ArgMatches) -> Result<()> {
         let input_dir = matches.get_one::<String>("input-dir").unwrap();
 
-        async {
-            Ok(collect_models(input_dir))
-        }.await
+        async { Ok(collect_models(input_dir)) }.await
     }
 }
 
@@ -31,7 +29,9 @@ fn collect_models(input_dir: &String) {
         .filter_map(|file| {
             let file = match file {
                 Ok(file) => file,
-                Err(_) => { return None; }
+                Err(_) => {
+                    return None;
+                }
             };
 
             let path = file.path();

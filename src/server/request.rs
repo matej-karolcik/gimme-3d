@@ -37,15 +37,16 @@ impl Request {
     }
 
     pub async fn from_form_data(form: FormData) -> anyhow::Result<Self> {
-        let fields: HashMap<String, Vec<u8>> = form.and_then(|mut field| async move {
-            let mut bytes: Vec<u8> = Vec::new();
-            while let Some(content) = field.data().await {
-                let content = content?;
-                bytes.put(content);
-            }
+        let fields: HashMap<String, Vec<u8>> = form
+            .and_then(|mut field| async move {
+                let mut bytes: Vec<u8> = Vec::new();
+                while let Some(content) = field.data().await {
+                    let content = content?;
+                    bytes.put(content);
+                }
 
-            Ok((field.name().to_string(), bytes))
-        })
+                Ok((field.name().to_string(), bytes))
+            })
             .try_collect()
             .await?;
 
@@ -67,18 +68,26 @@ impl Request {
             return Err(anyhow::anyhow!("model_url or model field is required"));
         }
 
-        let width = String::from_utf8(fields.get("width")
-            .ok_or(ClientError::MissingField("width".to_string()))?.to_vec())?
-            .parse()?;
-        let height = String::from_utf8(fields.get("height")
-            .ok_or(ClientError::MissingField("height".to_string()))?.to_vec())?
-            .parse()?;
+        let width = String::from_utf8(
+            fields
+                .get("width")
+                .ok_or(ClientError::MissingField("width".to_string()))?
+                .to_vec(),
+        )?
+        .parse()?;
+        let height = String::from_utf8(
+            fields
+                .get("height")
+                .ok_or(ClientError::MissingField("height".to_string()))?
+                .to_vec(),
+        )?
+        .parse()?;
 
         let mut textures = Vec::new();
-        fields.iter()
+        fields
+            .iter()
             .filter(|(k, _)| k.starts_with("texture"))
             .for_each(|(_, v)| textures.push(v.to_vec()));
-
 
         Ok(Request {
             model,

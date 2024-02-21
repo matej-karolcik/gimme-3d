@@ -3,8 +3,8 @@ use std::process::ExitStatus;
 
 use anyhow::{anyhow, Context};
 use async_trait::async_trait;
-use clap::{Arg, ArgMatches, Command};
 use clap::ArgAction::SetTrue;
+use clap::{Arg, ArgMatches, Command};
 
 pub struct Fbx2Gltf {}
 
@@ -49,7 +49,6 @@ impl crate::Subcommand for Fbx2Gltf {
     }
 }
 
-
 pub fn convert(input: &String, output: &String, binary: bool) -> anyhow::Result<()> {
     let input_path = Path::new(input);
     if !input_path.exists() {
@@ -58,11 +57,14 @@ pub fn convert(input: &String, output: &String, binary: bool) -> anyhow::Result<
 
     let output_path = Path::new(output);
     if !output_path.exists() {
-        std::fs::create_dir_all(output_path).context(format!("failed to create directory {}", output))?;
+        std::fs::create_dir_all(output_path)
+            .context(format!("failed to create directory {}", output))?;
     }
 
     if input_path.is_dir() {
-        input_path.read_dir().context("cannot list input directory")?
+        input_path
+            .read_dir()
+            .context("cannot list input directory")?
             .filter_map(|entry| {
                 let entry = entry.ok()?;
                 let path = entry.path();
@@ -84,7 +86,11 @@ pub fn convert(input: &String, output: &String, binary: bool) -> anyhow::Result<
     Ok(())
 }
 
-fn convert_file(input_path: &Path, output_path: Option<&Path>, binary_output: bool) -> anyhow::Result<ExitStatus> {
+fn convert_file(
+    input_path: &Path,
+    output_path: Option<&Path>,
+    binary_output: bool,
+) -> anyhow::Result<ExitStatus> {
     // todo use std::process::Command::new("fbx2gltf-bin") when it is available
     // todo prolly using which crate
     let binding = std::process::Command::new("./fbx2gltf-bin");

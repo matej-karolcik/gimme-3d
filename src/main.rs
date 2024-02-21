@@ -8,26 +8,22 @@ use gimme_3d::{collect, download, fbx2gltf, render_file, server, Subcommand};
 async fn main() {
     let mut root = Command::new("preview")
         .subcommand(
-            Command::new("serve")
-                .about("Start http server (using config.toml for configuration)")
+            Command::new("serve").about("Start http server (using config.toml for configuration)"),
         )
         .subcommand(
             Command::new("render")
                 .arg(
                     Arg::new("input")
                         .default_value("glb")
-                        .long_help("input file or directory")
+                        .long_help("input file or directory"),
                 )
                 .arg(
                     Arg::new("results")
                         .default_value("results")
-                        .long_help("output directory, will be created if not present")
+                        .long_help("output directory, will be created if not present"),
                 )
-                .arg(
-                    Arg::new("texture_url")
-                        .long_help("texture url to be used, local or remote")
-                )
-                .about("Render a single glb/gltf file or directory containing multiple")
+                .arg(Arg::new("texture_url").long_help("texture url to be used, local or remote"))
+                .about("Render a single glb/gltf file or directory containing multiple"),
         );
 
     let mut debug_components: Vec<Box<dyn Subcommand>> = vec![];

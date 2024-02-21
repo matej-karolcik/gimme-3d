@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
-use image::DynamicImage;
 use image::io::Reader;
+use image::DynamicImage;
 use three_d_asset::{Texture2D, TextureData};
 
 use gimme_3d::error::Error;
@@ -15,7 +15,9 @@ async fn main() {
         String::from("https://images.unsplash.com/photo-1683009427037-c5afc2b8134d?q=80&w=3540&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"),
     ];
 
-    let futures = urls.iter().map(|url| tokio::spawn(download_img(url.clone())));
+    let futures = urls
+        .iter()
+        .map(|url| tokio::spawn(download_img(url.clone())));
 
     let results: Vec<_> = futures_util::future::join_all(futures)
         .await
@@ -44,7 +46,8 @@ pub async fn download_img(url: String) -> anyhow::Result<Texture2D> {
         return Err(Error::ImageDownloadError {
             status_code: response.status(),
             message: response.text().await.unwrap_or("".to_owned()),
-        }.into());
+        }
+        .into());
     }
 
     let bytes = response.bytes().await?;

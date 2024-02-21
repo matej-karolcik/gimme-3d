@@ -23,10 +23,14 @@ pub(crate) async fn load(
         } else {
             let model_path = model_path.unwrap();
             Path::new(local_model_dir)
-                .join(Path::new(model_path.as_str()).file_name()
-                    .ok_or(anyhow!("no filename found in {}", model_path))?)
+                .join(
+                    Path::new(model_path.as_str())
+                        .file_name()
+                        .ok_or(anyhow!("no filename found in {}", model_path))?,
+                )
                 .to_str()
-                .ok_or(anyhow!("model path is not valid utf-8"))?.to_string()
+                .ok_or(anyhow!("model path is not valid utf-8"))?
+                .to_string()
         };
 
         std::fs::write(final_model_path.clone(), model_bytes.clone())?;
@@ -42,14 +46,18 @@ pub(crate) async fn load(
         final_model_path = model_path.clone();
     } else {
         let model_bytes = download(model_path.clone()).await?;
-        let model_path = Path::new(local_model_dir)
-            .join(Path::new(model_path.as_str()).file_name()
-                .ok_or(anyhow!("no filename found in {}", model_path))?);
+        let model_path = Path::new(local_model_dir).join(
+            Path::new(model_path.as_str())
+                .file_name()
+                .ok_or(anyhow!("no filename found in {}", model_path))?,
+        );
 
         std::fs::write(model_path.clone(), model_bytes.clone())?;
         loaded_assets = three_d_asset::io::load(&[model_path.clone()])?;
-        final_model_path = model_path.to_str()
-            .ok_or(anyhow!("model path is not valid utf-8"))?.to_string();
+        final_model_path = model_path
+            .to_str()
+            .ok_or(anyhow!("model path is not valid utf-8"))?
+            .to_string();
     }
 
     Ok((loaded_assets, final_model_path))
@@ -66,13 +74,13 @@ pub async fn download(url: String) -> Result<Vec<u8>> {
         return Err(Error::ModelDownloadError {
             status_code: response.status(),
             message: response.text().await.unwrap_or("".to_owned()),
-        }.into());
+        }
+        .into());
     }
 
     let bytes = response.bytes().await?;
     Ok(bytes.to_vec())
 }
-
 
 fn get_local_model(local_dir: &String, path: &String) -> Result<String> {
     if local_dir.is_empty() || path.is_empty() {
@@ -93,6 +101,9 @@ fn get_local_model(local_dir: &String, path: &String) -> Result<String> {
         return Err(Error::NoLocalModel(model_path.display().to_string()).into());
     }
 
-
-    Ok(String::from(model_path.to_str().ok_or(anyhow!("model path is not valid utf-8"))?))
+    Ok(String::from(
+        model_path
+            .to_str()
+            .ok_or(anyhow!("model path is not valid utf-8"))?,
+    ))
 }

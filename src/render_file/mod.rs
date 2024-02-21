@@ -48,7 +48,8 @@ pub async fn run(
         width * factor,
         height * factor,
         &String::new(),
-    ).await;
+    )
+    .await;
 
     if maybe_pixels.is_err() {
         println!("Failed to render: {}", maybe_pixels.err().unwrap());
@@ -62,13 +63,18 @@ pub async fn run(
         width,
         height,
         image::imageops::FilterType::Lanczos3,
-    ).into();
+    )
+    .into();
 
-    let mut writer = std::fs::File::create(Path::new(results_path)
-        .join(Path::new(&model_path).file_name().unwrap())
-        .with_extension("webp")).unwrap();
+    let mut writer = std::fs::File::create(
+        Path::new(results_path)
+            .join(Path::new(&model_path).file_name().unwrap())
+            .with_extension("webp"),
+    )
+    .unwrap();
 
-    img.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
+    img.write_to(&mut writer, image::ImageOutputFormat::WebP)
+        .unwrap();
 
     println!("Time: {:?}", std::time::Instant::now() - start);
 }

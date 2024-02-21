@@ -50,7 +50,8 @@ pub async fn download_img(url: String) -> anyhow::Result<Texture2D> {
         return Err(Error::ImageDownloadError {
             status_code: response.status(),
             message: response.text().await.unwrap_or("".to_owned()),
-        }.into());
+        }
+        .into());
     }
 
     let bytes = response.bytes().await?;

@@ -1,14 +1,11 @@
-use gltf::{Node, Scene};
 use gltf::camera::Projection;
 use gltf::scene::iter;
+use gltf::{Node, Scene};
 
 use crate::object;
 use crate::object::Transform;
 
-pub fn extract<T: Clone>(
-    scene: &Scene,
-    parse_fn: fn(&Node, Transform) -> Option<T>,
-) -> Option<T> {
+pub fn extract<T: Clone>(scene: &Scene, parse_fn: fn(&Node, Transform) -> Option<T>) -> Option<T> {
     for node in scene.nodes() {
         let carry = object::Transform::from(node.transform());
 
@@ -17,12 +14,7 @@ pub fn extract<T: Clone>(
             return maybe_object;
         }
 
-        let objects = visit_nodes(
-            node.children(),
-            carry,
-            parse_fn,
-            true,
-        );
+        let objects = visit_nodes(node.children(), carry, parse_fn, true);
         if !objects.is_empty() {
             return objects.get(0).cloned();
         }
@@ -31,10 +23,7 @@ pub fn extract<T: Clone>(
     None
 }
 
-pub fn extract_all<T>(
-    scene: &Scene,
-    parse_fn: fn(&Node, Transform) -> Option<T>,
-) -> Vec<T> {
+pub fn extract_all<T>(scene: &Scene, parse_fn: fn(&Node, Transform) -> Option<T>) -> Vec<T> {
     let mut result = vec![];
     for node in scene.nodes() {
         let carry = object::Transform::from(node.transform());
@@ -44,12 +33,7 @@ pub fn extract_all<T>(
             result.push(object);
         }
 
-        let objects = visit_nodes(
-            node.children(),
-            carry,
-            parse_fn,
-            false,
-        );
+        let objects = visit_nodes(node.children(), carry, parse_fn, false);
 
         if !objects.is_empty() {
             result.extend(objects);
@@ -105,12 +89,7 @@ fn visit_nodes<T>(
 
         let carry = carry * object::Transform::from(node.transform());
 
-        let objects = visit_nodes(
-            node.children(),
-            carry,
-            parse_fn,
-            break_on_first,
-        );
+        let objects = visit_nodes(node.children(), carry, parse_fn, break_on_first);
         if !objects.is_empty() {
             result.extend(objects);
             if break_on_first {

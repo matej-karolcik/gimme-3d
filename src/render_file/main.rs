@@ -24,9 +24,9 @@ async fn main() {
         &String::from("results"),
         &context,
         &None,
-    ).await;
+    )
+    .await;
     return;
-
 
     let dirs = std::fs::read_dir("glb").unwrap();
     for dir in dirs {
@@ -38,6 +38,7 @@ async fn main() {
             &String::from("results"),
             &context,
             &None,
-        ).await;
+        )
+        .await;
     }
 }

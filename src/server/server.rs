@@ -5,9 +5,9 @@ use anyhow::Result;
 use image::DynamicImage;
 use three_d::HeadlessContext;
 use tokio::sync::{mpsc, oneshot, Semaphore};
-use warp::Filter;
 use warp::multipart::FormData;
 use warp::reply::Response;
+use warp::Filter;
 
 use crate::render::*;
 
@@ -25,7 +25,9 @@ pub async fn run() {
 
     let (request_tx, mut request_rx) = mpsc::channel::<(request::Request, ResultChannel)>(10);
 
-    tokio::spawn(async move { serve(config.port, request_tx).await; });
+    tokio::spawn(async move {
+        serve(config.port, request_tx).await;
+    });
 
     loop {
         let (request, response_tx) = request_rx.recv().await.unwrap();
@@ -38,7 +40,8 @@ pub async fn run() {
                 request.width * config.upscale_factor,
                 request.height * config.upscale_factor,
                 &local_model_dir,
-            ).await;
+            )
+            .await;
             let _ = response_tx.send(pixels);
             continue;
         }
@@ -51,15 +54,13 @@ pub async fn run() {
             request.width * config.upscale_factor,
             request.height * config.upscale_factor,
             &local_model_dir,
-        ).await;
+        )
+        .await;
         let _ = response_tx.send(pixels);
     }
 }
 
-async fn serve(
-    port: u16,
-    request_tx: mpsc::Sender<(request::Request, ResultChannel)>,
-) {
+async fn serve(port: u16, request_tx: mpsc::Sender<(request::Request, ResultChannel)>) {
     let semaphore = Arc::new(Semaphore::new(1));
     let semaphore_clone = semaphore.clone();
     let request_tx_clone = request_tx.clone();
@@ -69,8 +70,11 @@ async fn serve(
         .and(warp::header::optional("accept"))
         .and(warp::any().map(move || semaphore_clone.clone()))
         .and(warp::any().map(move || request_tx_clone.clone()))
-        .and_then(|form: FormData, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, ResultChannel)>|
-            async move {
+        .and_then(
+            |form: FormData,
+             accept_header: Option<String>,
+             sem: Arc<Semaphore>,
+             request_tx: mpsc::Sender<(request::Request, ResultChannel)>| async move {
                 let start = std::time::Instant::now();
 
                 let request_future = request::Request::from_form_data(form).await;
@@ -102,7 +106,8 @@ async fn serve(
                 log::info!("Time overall: {:?}", start.elapsed());
 
                 respond(accept_header, pixels, start, width, height)
-            });
+            },
+        );
 
     let render = warp::post()
         .and(warp::path("render"))
@@ -110,34 +115,35 @@ async fn serve(
         .and(warp::header::optional("accept"))
         .and(warp::any().map(move || semaphore.clone()))
         .and(warp::any().map(move || request_tx.clone()))
-        .and_then(move |r: request::Request, accept_header: Option<String>, sem: Arc<Semaphore>, request_tx: mpsc::Sender<(request::Request, ResultChannel)>| {
-            async move {
-                let start = std::time::Instant::now();
-                let permit = sem.acquire_owned().await.unwrap();
+        .and_then(
+            move |r: request::Request,
+                  accept_header: Option<String>,
+                  sem: Arc<Semaphore>,
+                  request_tx: mpsc::Sender<(request::Request, ResultChannel)>| {
+                async move {
+                    let start = std::time::Instant::now();
+                    let permit = sem.acquire_owned().await.unwrap();
 
-                let (response_tx, response_rx) = oneshot::channel();
+                    let (response_tx, response_rx) = oneshot::channel();
 
-                let width = r.width;
-                let height = r.height;
+                    let width = r.width;
+                    let height = r.height;
 
-                request_tx.try_send((r, response_tx)).unwrap();
-                let pixels = response_rx.await.unwrap().unwrap();
+                    request_tx.try_send((r, response_tx)).unwrap();
+                    let pixels = response_rx.await.unwrap().unwrap();
 
-                drop(permit);
+                    drop(permit);
 
-                respond(accept_header, pixels, start, width, height)
-            }
-        });
+                    respond(accept_header, pixels, start, width, height)
+                }
+            },
+        );
 
-    let health = warp::get()
-        .and(warp::path("health"))
-        .map(|| "ok");
+    let health = warp::get().and(warp::path("health")).map(|| "ok");
 
     let routes = render.or(health).or(render_form);
 
-    warp::serve(routes)
-        .run(([0, 0, 0, 0], port))
-        .await;
+    warp::serve(routes).run(([0, 0, 0, 0], port)).await;
 }
 
 fn respond(
@@ -157,28 +163,35 @@ fn respond(
         if mime.contains("image/webp") {
             let start = std::time::Instant::now();
             let mut writer = std::io::Cursor::new(Vec::new());
-            result.write_to(&mut writer, image::ImageOutputFormat::WebP).unwrap();
+            result
+                .write_to(&mut writer, image::ImageOutputFormat::WebP)
+                .unwrap();
 
             log::info!("Time webp: {:?}", start.elapsed());
             log::info!("Time overall: {:?}", start.elapsed());
 
-
-            return Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
-                .header("Content-Type", "image/webp")
-                .body(writer.into_inner().into())
-                .unwrap());
+            return Ok::<Response, warp::Rejection>(
+                warp::http::response::Builder::new()
+                    .header("Content-Type", "image/webp")
+                    .body(writer.into_inner().into())
+                    .unwrap(),
+            );
         }
     }
 
     let mut writer = std::io::Cursor::new(Vec::new());
-    result.write_to(&mut writer, image::ImageOutputFormat::Png).unwrap();
+    result
+        .write_to(&mut writer, image::ImageOutputFormat::Png)
+        .unwrap();
 
     log::info!("Time overall: {:?}", start.elapsed());
 
-    Ok::<Response, warp::Rejection>(warp::http::response::Builder::new()
-        .header("Content-Type", "image/png")
-        .body(writer.into_inner().into())
-        .unwrap())
+    Ok::<Response, warp::Rejection>(
+        warp::http::response::Builder::new()
+            .header("Content-Type", "image/png")
+            .body(writer.into_inner().into())
+            .unwrap(),
+    )
 }
 
 struct InternalServerError(anyhow::Error);

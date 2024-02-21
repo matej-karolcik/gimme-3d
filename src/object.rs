@@ -87,11 +87,9 @@ impl Transform {
 
     pub fn rotation(&self) -> Rotation3<f32> {
         let (_, r, _) = self.decomposed();
-        Rotation3::from(
-            UnitQuaternion::from_quaternion(
-                Quaternion::new(r[3], r[0], r[1], r[2])
-            )
-        )
+        Rotation3::from(UnitQuaternion::from_quaternion(Quaternion::new(
+            r[3], r[0], r[1], r[2],
+        )))
     }
 }
 
@@ -107,10 +105,9 @@ impl From<Mat4> for Transform {
     fn from(value: Mat4) -> Self {
         Self {
             matrix: Matrix4::new(
-                value.x.x, value.y.x, value.z.x, value.w.x,
-                value.x.y, value.y.y, value.z.y, value.w.y,
-                value.x.z, value.y.z, value.z.z, value.w.z,
-                value.x.w, value.y.w, value.z.w, value.w.w,
+                value.x.x, value.y.x, value.z.x, value.w.x, value.x.y, value.y.y, value.z.y,
+                value.w.y, value.x.z, value.y.z, value.z.z, value.w.z, value.x.w, value.y.w,
+                value.z.w, value.w.w,
             ),
         }
     }

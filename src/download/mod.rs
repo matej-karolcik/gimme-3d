@@ -19,7 +19,7 @@ impl crate::Subcommand for Download {
             .arg(
                 Arg::new("config")
                     .default_value("config.toml")
-                    .long_help("path to config.toml to be used")
+                    .long_help("path to config.toml to be used"),
             )
             .about("Download models from a remote server to a local directory (for caching)")
     }
@@ -31,7 +31,8 @@ impl crate::Subcommand for Download {
             config.models.models_base_url,
             config.models.models,
             config.models.local_model_dir,
-        ).await
+        )
+        .await
     }
 }
 
