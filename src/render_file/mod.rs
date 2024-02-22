@@ -58,11 +58,10 @@ pub async fn run(
 
     let pixels = maybe_pixels.unwrap();
 
-    let img: DynamicImage = image::imageops::resize(
+    let img: DynamicImage = image::imageops::thumbnail(
         &pixels,
         width,
         height,
-        image::imageops::FilterType::Lanczos3,
     )
     .into();
 

@@ -1,7 +1,10 @@
-image=3d-renderer
+image=gusto48786/gimme-3d
 
 build:
-	docker build -t $(image) .
+	docker build --platform linux/amd64 -t $(image) .
+
+push:
+	docker build --platform linux/amd64 -t $(image):latest --push .
 
 upload-gltf:
 	aws s3 cp ./glb/ s3://jq-staging-matko/gltf/ --recursive --profile jq-staging-sysops
@@ -9,7 +12,6 @@ upload-gltf:
 run-server: build
 	docker run --memory=1024m \
 		--cpus=1 \
-		--init \
 		-it --rm \
 		-p 3030:3030 \
 		-v $$(pwd)/config.toml:/app/config.toml \
@@ -46,3 +48,9 @@ convert-assets:
 
 preview:
 	RUST_BACKTRACE=1 cargo run --release --bin preview
+
+serve:
+	RUST_BACKTRACE=1 cargo run --release --bin cmd -- serve
+
+helm-install:
+	helm upgrade gimme-3d ./helm/gimme-3d --values ./helm/gimme-3d/values.yaml --install

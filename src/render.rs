@@ -110,6 +110,10 @@ fn render(
     width: u32,
     height: u32,
 ) -> Result<DynamicImage> {
+    if cpu_textures.is_empty() {
+        return Err(Error::NoTextures.into());
+    }
+
     let start = std::time::Instant::now();
 
     let scene = doc.default_scene().ok_or(Error::NoDefaultScene)?;

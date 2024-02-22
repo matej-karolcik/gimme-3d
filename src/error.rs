@@ -37,6 +37,9 @@ pub enum Error {
         status_code: reqwest::StatusCode,
         message: String,
     },
+
+    #[error("No textures")]
+    NoTextures,
 }
 
 #[derive(Debug, Error)]

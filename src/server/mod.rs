@@ -7,3 +7,4 @@ mod logger;
 pub mod metrics;
 mod request;
 pub mod server;
+mod debug;

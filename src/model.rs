@@ -5,7 +5,7 @@ use three_d_asset::io::RawAssets;
 
 use crate::error::Error;
 
-pub(crate) async fn load(
+pub async fn load(
     model_path: Option<String>,
     local_model_dir: &String,
     model_bytes: Option<Vec<u8>>,
@@ -33,6 +33,7 @@ pub(crate) async fn load(
                 .to_string()
         };
 
+        // todo
         std::fs::write(final_model_path.clone(), model_bytes.clone())?;
         loaded_assets = three_d_asset::io::load(&[final_model_path.clone()])?;
 

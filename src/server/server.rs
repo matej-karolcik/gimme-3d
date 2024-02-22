@@ -11,9 +11,9 @@ use warp::Filter;
 
 use crate::render::*;
 
-use super::{config, logger, request};
+use super::{config, debug, logger, request};
 
-type ResultChannel = oneshot::Sender<Result<DynamicImage>>;
+pub(crate) type ResultChannel = oneshot::Sender<Result<DynamicImage>>;
 
 pub async fn run() {
     logger::init();
@@ -64,6 +64,7 @@ async fn serve(port: u16, request_tx: mpsc::Sender<(request::Request, ResultChan
     let semaphore = Arc::new(Semaphore::new(1));
     let semaphore_clone = semaphore.clone();
     let request_tx_clone = request_tx.clone();
+    let request_tx_debug = request_tx.clone();
     let render_form = warp::post()
         .and(warp::path("render-form"))
         .and(warp::multipart::form().max_length(Some(1024 * 1024 * 1024)))
@@ -141,7 +142,11 @@ async fn serve(port: u16, request_tx: mpsc::Sender<(request::Request, ResultChan
 
     let health = warp::get().and(warp::path("health")).map(|| "ok");
 
-    let routes = render.or(health).or(render_form);
+    let routes = render
+        .or(health)
+        .or(render_form)
+        .or(debug::get())
+        .or(debug::post(request_tx_debug));
 
     warp::serve(routes).run(([0, 0, 0, 0], port)).await;
 }

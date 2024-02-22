@@ -23,7 +23,7 @@ async fn main() {
         "glb/sweatshirt.glb",
         &String::from("results"),
         &context,
-        &None,
+        &Some(&String::from("testdata/canvas.png")),
     )
     .await;
     return;

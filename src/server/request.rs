@@ -12,10 +12,24 @@ use warp::multipart::FormData;
 pub struct Request {
     pub model_url: Option<String>,
     pub model: Option<Vec<u8>>,
+    // todo these should just be vecs
     pub texture_urls: Option<Vec<String>>,
     pub textures: Option<Vec<Vec<u8>>>,
     pub width: u32,
     pub height: u32,
+}
+
+impl Default for Request {
+    fn default() -> Self {
+        Request {
+            model_url: None,
+            model: None,
+            texture_urls: None,
+            textures: None,
+            width: 0,
+            height: 0,
+        }
+    }
 }
 
 impl fmt::Debug for Request {

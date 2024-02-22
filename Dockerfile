@@ -33,8 +33,21 @@ RUN apt-get update && apt-get install -y \
     libxi-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# todo remove this
+RUN apt-get update && apt-get install -y \
+    curl \
+    procps
+
 COPY --from=builder /tmp/cmd /app/cmd
 
 WORKDIR /app
 
-ENTRYPOINT ["xvfb-run", "-a", "/app/cmd", "serve"]
+# todo remove this
+COPY testdata/canvas.png testdata/canvas.png
+
+ENV TINI_VERSION v0.19.0
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
+RUN chmod +x /tini
+
+ENTRYPOINT ["/tini", "--"]
+CMD ["xvfb-run", "-a", "./cmd", "serve"]
