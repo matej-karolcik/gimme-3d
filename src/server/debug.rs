@@ -38,6 +38,8 @@ pub fn get() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection>
     })
 }
 
+const MAX_WIDTH: u32 = 2000;
+
 pub fn post(
     request_tx: mpsc::Sender<(Request, ResultChannel)>,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
@@ -56,7 +58,7 @@ pub fn post(
 
                 let (response_tx, response_rx) = oneshot::channel();
 
-                let mask_image = if let Ok(mask) = image::load_from_memory(&r.mask) {
+                let mut mask_image = if let Ok(mask) = image::load_from_memory(&r.mask) {
                     mask
                 } else {
                     return Err(warp::reject::Rejection::from(InternalServerError(
@@ -65,8 +67,17 @@ pub fn post(
                 };
 
                 let mut request: Request = r.clone().into();
-                request.width = mask_image.width();
-                request.height = mask_image.height();
+
+                if mask_image.width() > MAX_WIDTH {
+                    let ratio = mask_image.width() as f32 / mask_image.height() as f32;
+                    request.width = MAX_WIDTH;
+                    request.height = (MAX_WIDTH as f32 / ratio) as u32;
+
+                    mask_image = mask_image.thumbnail_exact(request.width, request.height);
+                } else {
+                    request.width = mask_image.width();
+                    request.height = mask_image.height();
+                }
 
                 if r.texture.is_none() {
                     let texture_bytes = std::fs::read("testdata/canvas.png").unwrap();
@@ -179,11 +190,7 @@ impl warp::reject::Reject for InternalServerError {}
 fn multiply_vanilla(bottom: &DynamicImage, top_raw: &DynamicImage) -> DynamicImage {
     let top;
     if top_raw.dimensions() != bottom.dimensions() {
-        top = top_raw.resize(
-            bottom.width(),
-            bottom.height(),
-            image::imageops::FilterType::Lanczos3,
-        );
+        top = top_raw.thumbnail_exact(bottom.width(), bottom.height());
     } else {
         top = top_raw.clone();
     }

@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, Result};
 use three_d_asset::io::RawAssets;
@@ -84,19 +84,11 @@ pub async fn download(url: String) -> Result<Vec<u8>> {
 }
 
 fn get_local_model(local_dir: &String, path: &String) -> Result<String> {
-    if local_dir.is_empty() || path.is_empty() {
-        return Err(anyhow!("local directory or path is empty"));
+    if path.is_empty() {
+        return Err(anyhow!("model path is empty"));
     }
 
-    let local_dir = Path::new(local_dir.as_str());
-    let model_path = Path::new(path.as_str());
-    let filename = model_path.file_name();
-
-    if filename.is_none() {
-        return Err(anyhow!("no filename found in {}", path));
-    }
-
-    let model_path = local_dir.join(filename.ok_or(anyhow!("no filename found in {}", path))?);
+    let model_path = PathBuf::new().join(local_dir).join(path);
 
     if !model_path.exists() {
         return Err(Error::NoLocalModel(model_path.display().to_string()).into());

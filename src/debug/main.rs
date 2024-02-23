@@ -40,12 +40,17 @@ async fn main() {
     //     "masks/s1_p1_set-pillowcase-duvet-cover/00_s1_p1_set-pillowcase-duvet-cover.webp".to_string(),
     //     canvas.to_string(),
     // ).await.unwrap();
-    // return;
+    run(
+        &context,
+        "masks/s3_p1_sweatshirt/00_s3_p1_sweatshirt.webp".to_string(),
+        canvas.to_string(),
+    ).await.unwrap();
+    return;
 
     for mask in mask_files {
-        let result = run(&context, mask, canvas.to_string()).await;
+        let result = run(&context, mask.clone(), canvas.to_string()).await;
         if let Err(e) = result {
-            println!("Error: {}", e);
+            println!("Error in {}: {}", mask, e);
         }
     }
 }
@@ -87,7 +92,6 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
 
     let model_file = model_file.strip_prefix("00_s").unwrap().to_string();
 
-    println!("mask: {}", mask);
     let mask = image::open(mask).unwrap();
     let texture_bytes = std::fs::read(canvas).unwrap();
 
@@ -117,7 +121,7 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
         image::imageops::FilterType::Triangle,
     )
     .into();
-    texture.save(Path::new("textures").join(Path::new(&model_file).with_extension("png")))?;
+    // texture.save(Path::new("textures").join(Path::new(&model_file).with_extension("png")))?;
 
     let result = multiply(&mask, &texture);
 
