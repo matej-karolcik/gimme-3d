@@ -6,9 +6,9 @@ use bytes::BufMut;
 use futures_util::TryStreamExt;
 use image::{DynamicImage, GenericImageView, Rgba, RgbaImage};
 use tokio::sync::{mpsc, oneshot, Semaphore};
-use warp::Filter;
 use warp::multipart::FormData;
 use warp::reply::Response;
+use warp::Filter;
 
 use crate::server::request::{ClientError, Request};
 use crate::server::server::ResultChannel;
@@ -24,11 +24,11 @@ pub fn get() -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection>
 <p>Click on the "Choose File" button to upload files:</p>
 <form method="post" enctype="multipart/form-data" target="_blank">
     <label for="mask">Mask</label>
-    <input type="file" id="mask" name="mask" accept="image/*" required/><br>
+    <input type="file" id="mask" name="mask" accept=".webp,.jpg,.jpeg,.png" required/><br>
     <label for="model">GLB</label>
-    <input type="file" id="model" name="model" required/><br>
+    <input type="file" id="model" name="model" accept=".glb" required/><br>
     <label for="texture">Texture</label>
-    <input type="file" id="texture" name="texture" accept="image/*"/><br>
+    <input type="file" id="texture" name="texture" accept=".webp,.jpg,.jpeg,.png"/><br>
     <button type="submit">Upload</button>
 </form>
 </body>
@@ -94,9 +94,10 @@ pub fn post(
                     }
                 };
 
-                let result = multiply_vanilla(&mask_image, &pixels);
+                let pixels = pixels.thumbnail_exact(mask_image.width(), mask_image.height());
+                image::imageops::overlay(&mut mask_image, &pixels, 0, 0);
 
-                respond(result)
+                respond(mask_image)
             },
         )
 }
@@ -186,43 +187,3 @@ impl Debug for InternalServerError {
 }
 
 impl warp::reject::Reject for InternalServerError {}
-
-fn multiply_vanilla(bottom: &DynamicImage, top_raw: &DynamicImage) -> DynamicImage {
-    let top;
-    if top_raw.dimensions() != bottom.dimensions() {
-        top = top_raw.thumbnail_exact(bottom.width(), bottom.height());
-    } else {
-        top = top_raw.clone();
-    }
-
-    let mut result_image = RgbaImage::new(bottom.width(), bottom.height());
-
-    for y in 0..bottom.height() {
-        for x in 0..bottom.width() {
-            let pixel1 = bottom.get_pixel(x, y);
-            let pixel2 = top.get_pixel(x, y);
-
-            let mut result = vec![];
-            (0..3).for_each(|i| {
-                let ch1 = pixel1[i] as f32 / 255.;
-                let ch2 = pixel2[i] as f32 / 255.;
-
-                if ch2 == 0. {
-                    result.push((ch1 * 255.) as u8);
-                    return;
-                }
-
-                result.push((ch1 * ch2 * 255.) as u8);
-            });
-
-            result.push(pixel1[3]);
-
-            let product: [u8; 4] = result.try_into().unwrap();
-            let product = Rgba(product);
-
-            result_image.put_pixel(x, y, product);
-        }
-    }
-
-    result_image.into()
-}

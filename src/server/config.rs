@@ -31,7 +31,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             port: 3030,
-            upscale_factor: 1,
+            upscale_factor: 2,
             models: Models {
                 local_model_dir: "models".to_string(),
                 models_base_url: "".to_string(),

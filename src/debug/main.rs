@@ -9,7 +9,7 @@ use three_d::*;
 async fn main() {
     let mask_files = walk_directory("masks".to_string());
 
-    let canvas = "testdata/canvas.png".to_string();
+    let canvas = "testdata/image.webp".to_string();
 
     let context = HeadlessContext::new().unwrap();
     let _ = std::fs::create_dir("results");
@@ -40,12 +40,12 @@ async fn main() {
     //     "masks/s1_p1_set-pillowcase-duvet-cover/00_s1_p1_set-pillowcase-duvet-cover.webp".to_string(),
     //     canvas.to_string(),
     // ).await.unwrap();
-    run(
-        &context,
-        "masks/s3_p1_sweatshirt/00_s3_p1_sweatshirt.webp".to_string(),
-        canvas.to_string(),
-    ).await.unwrap();
-    return;
+    // run(
+    //     &context,
+    //     "masks/s3_p1_sweatshirt/00_s3_p1_sweatshirt.webp".to_string(),
+    //     canvas.to_string(),
+    // ).await.unwrap();
+    // return;
 
     for mask in mask_files {
         let result = run(&context, mask.clone(), canvas.to_string()).await;
@@ -92,7 +92,7 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
 
     let model_file = model_file.strip_prefix("00_s").unwrap().to_string();
 
-    let mask = image::open(mask).unwrap();
+    let mut mask = image::open(mask).unwrap();
     let texture_bytes = std::fs::read(canvas).unwrap();
 
     const UPSCALE: u32 = 2;
@@ -118,12 +118,12 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
         &pixels,
         mask.width(),
         mask.height(),
-        image::imageops::FilterType::Triangle,
+        image::imageops::FilterType::Lanczos3,
     )
     .into();
     // texture.save(Path::new("textures").join(Path::new(&model_file).with_extension("png")))?;
 
-    let result = multiply(&mask, &texture);
+    image::imageops::overlay(&mut mask, &texture, 0, 0);
 
     let mut writer = std::fs::File::create(
         Path::new("results")
@@ -131,7 +131,7 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
             .with_extension("webp"),
     )?;
 
-    result.write_to(&mut writer, image::ImageOutputFormat::WebP)?;
+    mask.write_to(&mut writer, image::ImageOutputFormat::WebP)?;
 
     println!("{:<width$}{:?}", model_file, start.elapsed(), width = 50);
 

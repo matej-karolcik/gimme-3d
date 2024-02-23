@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use warp::multipart::FormData;
 
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, Default)]
 pub struct Request {
     pub model_url: Option<String>,
     pub model: Option<Vec<u8>>,
@@ -17,19 +17,6 @@ pub struct Request {
     pub textures: Option<Vec<Vec<u8>>>,
     pub width: u32,
     pub height: u32,
-}
-
-impl Default for Request {
-    fn default() -> Self {
-        Request {
-            model_url: None,
-            model: None,
-            texture_urls: None,
-            textures: None,
-            width: 0,
-            height: 0,
-        }
-    }
 }
 
 impl fmt::Debug for Request {
