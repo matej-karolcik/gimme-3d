@@ -58,12 +58,7 @@ pub async fn run(
 
     let pixels = maybe_pixels.unwrap();
 
-    let img: DynamicImage = image::imageops::thumbnail(
-        &pixels,
-        width,
-        height,
-    )
-    .into();
+    let img: DynamicImage = image::imageops::thumbnail(&pixels, width, height).into();
 
     let mut writer = std::fs::File::create(
         Path::new(results_path)
