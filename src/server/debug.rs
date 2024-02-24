@@ -4,11 +4,11 @@ use std::sync::Arc;
 
 use bytes::BufMut;
 use futures_util::TryStreamExt;
-use image::{DynamicImage, GenericImageView, Rgba, RgbaImage};
+use image::DynamicImage;
 use tokio::sync::{mpsc, oneshot, Semaphore};
+use warp::Filter;
 use warp::multipart::FormData;
 use warp::reply::Response;
-use warp::Filter;
 
 use crate::server::request::{ClientError, Request};
 use crate::server::server::ResultChannel;
@@ -125,10 +125,7 @@ struct DebugRequest {
 
 impl Into<Request> for DebugRequest {
     fn into(self) -> Request {
-        let textures = match self.texture {
-            Some(texture) => Some(vec![texture]),
-            None => None,
-        };
+        let textures = self.texture.map(|texture| vec![texture]);
         Request {
             model: Some(self.model),
             textures,

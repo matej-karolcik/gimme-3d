@@ -45,18 +45,15 @@ pub fn extract_all<T>(scene: &Scene, parse_fn: fn(&Node, Transform) -> Option<T>
 
 pub fn get_camera(node: &Node, carry: Transform) -> Option<object::Camera> {
     if let Some(camera) = node.camera() {
-        match camera.projection() {
-            Projection::Perspective(perspective) => {
-                return Some(object::Camera {
-                    parent_transform: carry,
-                    transform: object::Transform::from(node.transform()),
-                    aspect_ratio: perspective.aspect_ratio().unwrap_or(1.0),
-                    yfov: perspective.yfov(),
-                    zfar: perspective.zfar().unwrap_or(100.0),
-                    znear: perspective.znear(),
-                });
-            }
-            _ => {}
+        if let Projection::Perspective(perspective) = camera.projection() {
+            return Some(object::Camera {
+                parent_transform: carry,
+                transform: object::Transform::from(node.transform()),
+                aspect_ratio: perspective.aspect_ratio().unwrap_or(1.0),
+                yfov: perspective.yfov(),
+                zfar: perspective.zfar().unwrap_or(100.0),
+                znear: perspective.znear(),
+            });
         }
     }
     None

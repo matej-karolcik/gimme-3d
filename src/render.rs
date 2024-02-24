@@ -154,7 +154,8 @@ fn render(
     let viewport = Viewport::new_at_origo(width, height);
     const FACTOR: f32 = 100.;
 
-    let yfov = camera_props.yfov * (camera_props.aspect_ratio / (width as f32 / height as f32));
+    let yfov = camera_props.yfov * (width as f32 / height as f32);
+    // let yfov = 0.356186 * (width as f32 / height as f32);
 
     let camera = Camera::new_perspective(
         viewport,
