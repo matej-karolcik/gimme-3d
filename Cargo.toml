@@ -26,31 +26,27 @@ name = "preview"
 path = "src/debug/main.rs"
 
 
-
 [dependencies]
 gltf = "1.4.0"
-anyhow = "1.0.75"
-clap = "4.4.11"
-tokio = { version = "1.35.0", features = ["rt", "rt-multi-thread", "macros"] }
-three-d = { version = "0.16.3", features = ["headless"] }
+anyhow = "1.0.80"
+clap = "4.5.1"
+tokio = { version = "1.36.0", features = ["rt", "rt-multi-thread", "macros"] }
+three-d = { version = "0.16.4", features = ["headless"] }
 three-d-asset = { version = "0.6.0", features = ["gltf", "png", "jpeg", "data-url", "reqwest"] }
-nalgebra = "0.32.3"
+nalgebra = "0.32.4"
 warp = "0.3.6"
-serde = { version = "1.0.193", features = ["derive"] }
+serde = { version = "1.0.197", features = ["derive"] }
 log = "0.4.20"
-serde_json = "1.0.108"
+serde_json = "1.0.114"
 env_logger = "0.11.2"
-image = { version = "0.24.7", features = ["webp-encoder"] }
+image = { version = "0.24.9", features = ["webp-encoder"] }
 cgmath = "0.18.0"
 thiserror = "1.0.56"
 futures-util = "0.3.30"
 bytes = "1.5.0"
 toml = "0.8.8"
-reqwest = "0.11.23"
+reqwest = "0.11.24"
 url = "2.5.0"
 async-trait = "0.1.77"
 indicatif = "0.17.7"
-imageproc = "0.23.0"
 prometheus = "0.13.3"
-lazy_static = "1.4.0"
-scopeguard = "1.2.0"

@@ -44,7 +44,9 @@ async fn main() {
         &context,
         "masks/s3_p4_cushion-decorative/00_s3_p4_cushion-decorative_400x400.webp".to_string(),
         canvas.to_string(),
-    ).await.unwrap();
+    )
+    .await
+    .unwrap();
     return;
 
     for mask in mask_files {
@@ -112,7 +114,7 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
         mask.height() * UPSCALE,
         &String::new(),
     )
-        .await?;
+    .await?;
 
     let texture: DynamicImage = image::imageops::resize(
         &pixels,
@@ -120,7 +122,7 @@ async fn run(context: &HeadlessContext, mask: String, canvas: String) -> Result<
         mask.height(),
         image::imageops::FilterType::Lanczos3,
     )
-        .into();
+    .into();
     texture.save(Path::new("textures").join(Path::new(&model_file).with_extension("png")))?;
 
     let result = multiply(&mask, &texture);

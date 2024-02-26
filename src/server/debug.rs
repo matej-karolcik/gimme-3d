@@ -6,9 +6,9 @@ use bytes::BufMut;
 use futures_util::TryStreamExt;
 use image::DynamicImage;
 use tokio::sync::{mpsc, oneshot, Semaphore};
-use warp::Filter;
 use warp::multipart::FormData;
 use warp::reply::Response;
+use warp::Filter;
 
 use crate::server::request::{ClientError, Request};
 use crate::server::server::ResultChannel;
